@@ -1,6 +1,5 @@
-# Ignore input and output skymap files
+# Ignoreoutput skymap files
 *.yaml
-*.pickle
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
