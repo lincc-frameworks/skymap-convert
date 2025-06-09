@@ -64,39 +64,6 @@ def write_polygons_ra_dec(skymap, output_path, inner=True, write_patches=False):
         yaml.dump(out, f, sort_keys=False)
 
 
-# def load_polygons_ra_dec(yaml_path):
-#     """Load tract polygons from a YAML file written with RA/Dec coordinates.
-
-#     Parameters
-#     ----------
-#     yaml_path : str or Path
-#         Path to the YAML file created by `write_polygons_ra_dec`.
-
-#     Returns
-#     -------
-#     dict
-#         Dictionary mapping tract ID (int) to `sphgeom.ConvexPolygon`.
-#     """
-#     from lsst.sphgeom import LonLat, UnitVector3d, ConvexPolygon
-
-#     with open(yaml_path, "r") as f:
-#         data = yaml.safe_load(f)
-
-#     poly_dict = {}
-#     for tract_id_str, record in data["tracts"].items():
-#         tract_id = int(tract_id_str)
-#         vertices = record["polygon"]
-
-#         unit_vecs = [UnitVector3d.fromLonLat(*pair) for pair in vertices]
-#         unique_vecs = {tuple(round(x, 12) for x in v) for v in unit_vecs}
-#         if len(unique_vecs) < 3:
-#             print(f"⚠️ Storing `None` for degenerate tract {tract_id}")
-#             poly_dict[tract_id] = None
-#             continue
-#         poly_dict[tract_id] = ConvexPolygon(unit_vecs)
-
-#     return poly_dict
-
 from lsst.sphgeom import LonLat, UnitVector3d, ConvexPolygon
 
 
