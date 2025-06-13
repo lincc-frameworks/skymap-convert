@@ -1,11 +1,11 @@
 
-# skymap_to_poly_coords
+# skymap_convert
 
 [![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
 
-[![PyPI](https://img.shields.io/pypi/v/skymap_to_poly_coords?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/skymap_to_poly_coords/)
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lincc-frameworks/skymap_to_poly_coords/smoke-test.yml)](https://github.com/lincc-frameworks/skymap_to_poly_coords/actions/workflows/smoke-test.yml)
-[![Codecov](https://codecov.io/gh/lincc-frameworks/skymap_to_poly_coords/branch/main/graph/badge.svg)](https://codecov.io/gh/lincc-frameworks/skymap_to_poly_coords)
+[![PyPI](https://img.shields.io/pypi/v/skymap_convert?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/skymap_convert/)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lincc-frameworks/skymap_convert/smoke-test.yml)](https://github.com/lincc-frameworks/skymap_convert/actions/workflows/smoke-test.yml)
+[![Codecov](https://codecov.io/gh/lincc-frameworks/skymap_convert/branch/main/graph/badge.svg)](https://codecov.io/gh/lincc-frameworks/skymap_convert)
 
 This project was automatically generated using the LINCC-Frameworks 
 [python-project-template](https://github.com/lincc-frameworks/python-project-template).

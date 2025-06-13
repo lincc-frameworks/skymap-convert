@@ -1,6 +1,7 @@
-from .geometry import box_to_convex_polygon
-from lsst.sphgeom import UnitVector3d, ConvexPolygon, Box, LonLat
 import numpy as np
+from lsst.sphgeom import Box, ConvexPolygon, LonLat, UnitVector3d
+
+from .geometry import box_to_convex_polygon
 
 
 def get_poly_from_tract_id(skymap, tract_id, inner=False) -> ConvexPolygon:

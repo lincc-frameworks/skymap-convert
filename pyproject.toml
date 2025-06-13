@@ -1,6 +1,6 @@
 
 [project]
-name = "skymap_to_poly_coords"
+name = "skymap_convert"
 license = {file = "LICENSE"}
 readme = "README.md"
 authors = [
@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [project.urls]
-"Source Code" = "https://github.com/lincc-frameworks/skymap_to_poly_coords"
+"Source Code" = "https://github.com/lincc-frameworks/skymap_convert"
 
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
 [project.optional-dependencies]
@@ -41,7 +41,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-write_to = "src/skymap_to_poly_coords/_version.py"
+write_to = "src/skymap_convert/_version.py"
 
 [tool.pytest.ini_options]
 testpaths = [
@@ -100,4 +100,4 @@ ignore = [
 
 
 [tool.coverage.run]
-omit=["src/skymap_to_poly_coords/_version.py"]
+omit=["src/skymap_convert/_version.py"]

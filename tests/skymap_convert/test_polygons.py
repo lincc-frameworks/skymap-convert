@@ -1,5 +1,5 @@
 import pytest
-from skymap_to_poly_coords import load_polygons_ra_dec
+from skymap_convert import load_polygons_ra_dec
 from skymap_to_poly_coords.test_utils import polys_are_equiv, get_poly_from_tract_id
 
 

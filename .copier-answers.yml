@@ -3,7 +3,7 @@ _commit: v2.0.7
 _src_path: gh:lincc-frameworks/python-project-template
 author_email: olynn@andrew.cmu.edu
 author_name: Olivia Lynn
-create_example_module: true
+create_example_module: false
 custom_install: true
 enforce_style:
 - ruff_lint
@@ -13,9 +13,9 @@ failure_notification: []
 include_benchmarks: false
 include_docs: false
 mypy_type_checking: none
-package_name: skymap_to_poly_coords
+package_name: skymap_convert
 project_license: MIT
-project_name: skymap_to_poly_coords
+project_name: skymap_convert
 project_organization: lincc-frameworks
 python_versions:
 - '3.10'

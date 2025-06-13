@@ -1,5 +1,7 @@
 """Geometry utilities for converting between different representations of sky regions."""
 
+from lsst.sphgeom import ConvexPolygon, LonLat, UnitVector3d
+
 
 def box_to_convex_polygon(box):
     """Convert an lsst.sphgeom.Box to a ConvexPolygon.
@@ -14,8 +16,6 @@ def box_to_convex_polygon(box):
     ConvexPolygon
         The equivalent polygon.
     """
-    from lsst.sphgeom import LonLat, ConvexPolygon, UnitVector3d
-
     if box.isEmpty():
         raise ValueError("Cannot convert an empty Box to a ConvexPolygon.")
 

@@ -1,12 +1,13 @@
 from .geometry import box_to_convex_polygon, unit_vector3d_to_radec
 from .io import (
+    RingOptimizedSkymapReader,
     load_pickle_skymap,
     load_polygons_ra_dec,
     write_polygons_ra_dec,
     write_ring_optimized_skymap,
-    RingOptimizedSkymapReader,
 )
-from .utils import radians_to_degrees, IterateTractAndRing
+from .utils import IterateTractAndRing, radians_to_degrees
+from .version import __version__
 
 __all__ = [
     "load_pickle_skymap",

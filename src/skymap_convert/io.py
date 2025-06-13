@@ -5,7 +5,7 @@ import pickle
 from pathlib import Path
 
 import yaml
-from lsst.sphgeom import ConvexPolygon, LonLat, UnitVector3d
+from lsst.sphgeom import Box, ConvexPolygon, LonLat, UnitVector3d
 
 from .geometry import box_to_convex_polygon, unit_vector3d_to_radec
 from .utils import radians_to_degrees
@@ -30,8 +30,6 @@ def write_polygons_ra_dec(skymap, output_path, inner=True, write_patches=False):
     write_patches : bool, optional
         If True, include patch polygons for each tract. Default is False.
     """
-    import lsst.geom as geom
-    from lsst.sphgeom import Box, LonLat
 
     out = {"tracts": {}}
 
@@ -50,6 +48,7 @@ def write_polygons_ra_dec(skymap, output_path, inner=True, write_patches=False):
         # Save patch vectors, too.
         # NB: The theory is here, and this technically works, but will be much better to do this
         # after implementing the ring-based optimization.
+        # import lsst.geom as geom
         # if write_patches:
         #     patch_polys = []
         #     for patch in tract:
@@ -144,9 +143,7 @@ def write_ring_optimized_skymap(skymap, output_path, inner=True, patches=False, 
     out["metadata"]["skymap_name"] = skymap_name
     out["metadata"]["inner_polygons"] = inner
     out["metadata"]["ra_start"] = skymap.config.raStart
-
-    # todo : read through how many patches in each tract,
-    # or is this into at a higher level? then include
+    # todo : patch metadata, like how many per tract
 
     # Handle the poles first.
     first_ring_middle_dec = ring_size * (1) - 0.5 * math.pi
@@ -195,12 +192,11 @@ def write_ring_optimized_skymap(skymap, output_path, inner=True, patches=False, 
             # Iterate the tract counter.
             tract_counter += num_tracts
 
-            # Temporary: just break after 10 rings for testing.
-            # if ring >= 10:
-            #     break
-
     else:
-        print("oh no!")
+        raise NotImplementedError(
+            "Outer polygons are not yet implemented for ring-optimized skymaps. "
+            "Please use Full Vertex skymap for outer polygons instead."
+        )
 
     # If directory does not exist, create it.
     output_dir = output_path.parent
@@ -316,7 +312,7 @@ class RingOptimizedSkymapReader:
         else:
             raise ValueError("which_pole must be 'north' or 'south'.")
 
-    def _construct_quad(self, dec_min, dec_max, ra_start, ra_end, pole=False):
+    def _construct_quad(self, dec_min, dec_max, ra_start, ra_end):
         """Construct a quadrilateral polygon from the given bounds.
 
         Quadrilateral is defined by four vertices in RA/Dec coordinates (degrees). Vertices begin at
@@ -335,28 +331,13 @@ class RingOptimizedSkymapReader:
             Starting right ascension in degrees.
         ra_end : float
             Ending right ascension in degrees.
-        pole : bool, optional
-            If True, the quadrilateral is constructed for a pole (south or north). Default is False.
-            If True, the RA values are not wrapped to [0, 360) range (to allow for an RA = 360).
-            todo this may change
 
         Returns
         -------
         list of list of float
             A list of [RA, Dec] representing the vertices of the quadrilateral.
         """
-        if pole:
-            return [
-                [ra_start, dec_min],  # Lower left
-                [ra_end, dec_min],  # Lower right
-                [ra_end, dec_max],  # Upper right
-                [ra_start, dec_max],  # Upper left
-            ]
         return [
-            # (ra_start % 360.0, dec_min),  # Lower left
-            # (ra_end % 360.0, dec_min),  # Lower right
-            # (ra_end % 360.0, dec_max),  # Upper right
-            # (ra_start % 360.0, dec_max),  # Upper left
             [ra_start, dec_min],  # Lower left
             [ra_end, dec_min],  # Lower right
             [ra_end, dec_max],  # Upper right
@@ -389,7 +370,7 @@ class RingOptimizedSkymapReader:
                 ra_start, ra_end = self.poles[0]["ra_bounds"][0], self.poles[0]["ra_bounds"][1]
                 ra_start = ra_start % 360.0
                 ra_end = ra_end % 360.0
-                quad = self._construct_quad(dec_min, dec_max, ra_start, ra_end, pole=False)
+                quad = self._construct_quad(dec_min, dec_max, ra_start, ra_end)
                 return {
                     "tract_id": tract_id,
                     "ring": -1,
@@ -405,7 +386,7 @@ class RingOptimizedSkymapReader:
                 ra_start, ra_end = self.poles[1]["ra_bounds"][0], self.poles[1]["ra_bounds"][1]
                 ra_start = ra_start % 360.0
                 ra_end = ra_end % 360.0
-                quad = self._construct_quad(dec_min, dec_max, ra_start, ra_end, pole=True)
+                quad = self._construct_quad(dec_min, dec_max, ra_start, ra_end)
                 return {
                     "tract_id": tract_id,
                     "ring": len(self.rings),
@@ -455,12 +436,9 @@ class RingOptimizedSkymapReader:
             return self._construct_tract_data(tract_id)
 
         # Handle normal tracts in rings.
-        # tract_id -= 1  # Adjust for the south pole being tract 0 and being unrepresented in self.rings.
-        # print(f"Getting tract {tract_id}...")
         for ring in self.rings:
             tracts_in_ring = ring["num_tracts"]
             if tract_id <= tracts_in_ring:  # tract is in this ring
-                # print("Found tract in ring:", ring["ring"])
                 return self._construct_tract_data(tract_id, ring)
             else:
                 tract_id -= tracts_in_ring
