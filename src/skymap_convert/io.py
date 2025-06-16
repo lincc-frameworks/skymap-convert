@@ -31,61 +31,6 @@ def load_pickle_skymap(path):
         return pickle.load(f)
 
 
-def write_polygons_ra_dec(skymap, output_path, inner=True, write_patches=False):
-    """Legacy function for writing full vertex skymaps. Use FullVertexWriter instead.
-
-    Parameters
-    ----------
-    skymap : lsst.skymap.SkyMap
-        The LSST SkyMap object.
-    output_path : str or Path
-        Destination path for the output YAML file.
-    inner : bool, optional
-        If True, write inner polygons. If False, write outer polygons. Default is True.
-    write_patches : bool, optional
-        If True, include patch polygons for each tract. Default is False.
-    """
-    writer = FullVertexWriter()
-    writer.write(skymap, output_path, inner=inner, write_patches=write_patches)
-
-
-def load_polygons_ra_dec(yaml_path):
-    """Legacy function for loading full vertex skymaps. Use FullVertexReader instead.
-
-    Parameters
-    ----------
-    yaml_path : str or Path
-        Path to the YAML file created by FullVertexWriter.
-
-    Returns
-    -------
-    dict
-        Dictionary mapping tract ID (int) to sphgeom.ConvexPolygon or None if degenerate.
-    """
-    reader = FullVertexReader(yaml_path)
-    return reader.get_convex_polygons()
-
-
-def write_ring_optimized_skymap(skymap, output_path, inner=True, patches=False, skymap_name=None):
-    """Legacy function for writing ring-optimized skymaps. Use RingOptimizedWriter instead.
-
-    Parameters
-    ----------
-    skymap : lsst.skymap.SkyMap
-        The LSST SkyMap object.
-    output_path : str or Path
-        Destination path for the output YAML file.
-    inner : bool, optional
-        If True, include inner polygons in the output. Default is True.
-    patches : bool, optional
-        If True, include patch polygons in the output. Default is False.
-    skymap_name : str, optional
-        Name of the skymap, used in the metadata. If None, defaults to "ring_optimized_skymap".
-    """
-    writer = RingOptimizedWriter()
-    writer.write(skymap, output_path, inner=inner, patches=patches, skymap_name=skymap_name)
-
-
 @dataclass
 class TractData:
     """Represents tract information with basic validation."""
@@ -310,10 +255,10 @@ class FullVertexReader(SkymapReader):
         TractData or None
             The tract data, or None if tract is degenerate or not found
         """
-        if str(tract_id) not in self.data["tracts"]:
+        if tract_id not in self.data["tracts"]:
             raise ValueError(f"Tract {tract_id} not found in skymap")
 
-        content = self.data["tracts"][str(tract_id)]
+        content = self.data["tracts"][tract_id]
         ra_dec_vertices = content["polygon"]
 
         # Check for degeneracy
