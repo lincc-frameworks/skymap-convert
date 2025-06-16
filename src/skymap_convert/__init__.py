@@ -7,7 +7,6 @@ from .io import (
     write_ring_optimized_skymap,
 )
 from .utils import IterateTractAndRing, radians_to_degrees
-from ._version import __version__
 
 __all__ = [
     "load_pickle_skymap",

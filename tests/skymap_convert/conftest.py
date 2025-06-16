@@ -1,11 +1,12 @@
 from pathlib import Path
+
 import pytest
 from skymap_convert.io import load_pickle_skymap
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[2]
 TEST_DIR = PACKAGE_ROOT / "tests"
 RAW_SKYMAP_DIR = TEST_DIR / "data" / "raw_skymaps"
-SKYMAP_OUT_DIR = PACKAGE_ROOT / "skymaps_out"
+SKYMAP_OUT_DIR = PACKAGE_ROOT / "converted_skymaps"
 
 
 @pytest.fixture

@@ -1,17 +1,23 @@
 import pytest
-from skymap_convert import load_polygons_ra_dec
-from skymap_convert.test_utils import polys_are_equiv, get_poly_from_tract_id
+from skymap_convert import load_polygons_ra_dec, write_polygons_ra_dec
+from skymap_convert.test_utils import get_poly_from_tract_id, polys_are_equiv
+import tempfile
+from pathlib import Path
 
 
 @pytest.mark.parametrize("inner", [True, False])
-def test_loaded_polygons_equivalent(lsst_skymap, skymap_out_dir, inner):
+def test_loaded_polygons_equivalent(lsst_skymap, inner):
     """Test that polygons written and reloaded from disk are equivalent to ground truth."""
 
-    # Choose path based on inner/outer
-    yaml_path = skymap_out_dir / ("inner_polys.yaml" if inner else "outer_polys.yaml")
+    # use tmpdir fixture to create a temporary directory for the test
+    with tempfile.TemporaryDirectory() as tmpdir:
+        converted_skymap_path = Path(tmpdir) / ("inner_polygons.yaml" if inner else "outer_polygons.yaml")
 
-    # Load from disk
-    loaded_poly_map = load_polygons_ra_dec(yaml_path)
+        # Write the skymap to disk
+        write_polygons_ra_dec(lsst_skymap, converted_skymap_path, inner=inner)
+
+        # Load from disk
+        loaded_poly_map = load_polygons_ra_dec(converted_skymap_path)
 
     for tract_id in range(lsst_skymap._numTracts):
         ground_truth = get_poly_from_tract_id(lsst_skymap, tract_id, inner=inner)
