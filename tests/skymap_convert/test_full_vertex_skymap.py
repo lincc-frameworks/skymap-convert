@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 @pytest.mark.parametrize("inner", [True, False])
-def test_full_vertex_skymap_read_write(lsst_skymap, inner):
+def test_loaded_polygons_equivalent(lsst_skymap, inner):
     """Test that polygons written and reloaded from disk are equivalent to ground truth."""
 
     # use tmpdir fixture to create a temporary directory for the test
@@ -33,6 +33,6 @@ def test_full_vertex_skymap_read_write(lsst_skymap, inner):
         if tract_id == 0 or tract_id == lsst_skymap._numTracts - 1:
             # Skip first and last tract for now, but todo
             continue
-
-        assert loaded is not None, f"Tract {tract_id} missing from loaded polygons."
-        assert polys_are_equiv(ground_truth, loaded), f"Tract {tract_id} polygons are not equivalent"
+        else:
+            assert loaded is not None, f"Tract {tract_id} missing from loaded polygons."
+            assert polys_are_equiv(ground_truth, loaded), f"Tract {tract_id} polygons are not equivalent"

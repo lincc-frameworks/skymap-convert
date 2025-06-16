@@ -45,8 +45,8 @@ def write_polygons_ra_dec(skymap, output_path, inner=True, write_patches=False):
     write_patches : bool, optional
         If True, include patch polygons for each tract. Default is False.
     """
-    writer = FullVertexWriter(output_path)
-    writer.write(skymap, inner=inner, write_patches=write_patches)
+    writer = FullVertexWriter()
+    writer.write(skymap, output_path, inner=inner, write_patches=write_patches)
 
 
 def load_polygons_ra_dec(yaml_path):
@@ -82,8 +82,8 @@ def write_ring_optimized_skymap(skymap, output_path, inner=True, patches=False, 
     skymap_name : str, optional
         Name of the skymap, used in the metadata. If None, defaults to "ring_optimized_skymap".
     """
-    writer = RingOptimizedWriter(output_path)
-    writer.write(skymap, inner=inner, patches=patches, skymap_name=skymap_name)
+    writer = RingOptimizedWriter()
+    writer.write(skymap, output_path, inner=inner, patches=patches, skymap_name=skymap_name)
 
 
 @dataclass
@@ -147,28 +147,26 @@ class TractData:
 class SkymapWriter(ABC):
     """Abstract base class for writing skymaps to files."""
 
-    def __init__(self, output_path: Union[str, Path]):
-        """Initialize the writer with output path.
+    def _ensure_output_directory(self, output_path: Path):
+        """Ensure the output directory exists.
 
         Parameters
         ----------
-        output_path : str or Path
-            Destination path for the output file
+        output_path : Path
+            The output file path
         """
-        self.output_path = Path(output_path)
-
-    def _ensure_output_directory(self):
-        """Ensure the output directory exists."""
-        self.output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
     @abstractmethod
-    def write(self, skymap, **kwargs):
+    def write(self, skymap, output_path: Union[str, Path], **kwargs):
         """Write the skymap to file.
 
         Parameters
         ----------
         skymap : lsst.skymap.SkyMap
             The LSST SkyMap object to write
+        output_path : str or Path
+            Destination path for the output file
         **kwargs
             Additional keyword arguments specific to each writer
         """
@@ -219,20 +217,23 @@ class SkymapReader(ABC):
 
 
 class FullVertexWriter(SkymapWriter):
-    """Writer for Full Vertex format skymaps."""
+    """Writer for full vertex format skymaps."""
 
-    def write(self, skymap, inner=True, write_patches=False):
+    def write(self, skymap, output_path: Union[str, Path], inner=True, write_patches=False):
         """Write tract (and optionally patch) polygons to YAML using RA/Dec coordinates.
 
         Parameters
         ----------
         skymap : lsst.skymap.SkyMap
             The LSST SkyMap object.
+        output_path : str or Path
+            Destination path for the output file
         inner : bool, optional
             If True, write inner polygons. If False, write outer polygons. Default is True.
         write_patches : bool, optional
             If True, include patch polygons for each tract. Default is False.
         """
+        output_path = Path(output_path)
         out = {"tracts": {}}
 
         for tract in skymap:
@@ -268,13 +269,13 @@ class FullVertexWriter(SkymapWriter):
             #     out["tracts"][tract_id]["patches"] = patch_polys
 
         # Ensure output directory exists
-        self._ensure_output_directory()
+        self._ensure_output_directory(output_path)
 
         # Write to YAML file.
-        with open(self.output_path, "w") as f:
+        with open(output_path, "w") as f:
             yaml.dump(out, f, sort_keys=False)
 
-        print(f"✅ Wrote {len(out['tracts'])} tract polygons to {self.output_path}")
+        print(f"✅ Wrote {len(out['tracts'])} tract polygons to {output_path}")
 
 
 class FullVertexReader(SkymapReader):
@@ -400,13 +401,15 @@ class FullVertexReader(SkymapReader):
 class RingOptimizedWriter(SkymapWriter):
     """Writer for ring-optimized format skymaps."""
 
-    def write(self, skymap, inner=True, patches=False, skymap_name=None):
+    def write(self, skymap, output_path: Union[str, Path], inner=True, patches=False, skymap_name=None):
         """Write a ring-optimized skymap to YAML format.
 
         Parameters
         ----------
         skymap : lsst.skymap.SkyMap
             The LSST SkyMap object.
+        output_path : str or Path
+            Destination path for the output file
         inner : bool, optional
             If True, include inner polygons in the output. Default is True.
         patches : bool, optional
@@ -414,6 +417,7 @@ class RingOptimizedWriter(SkymapWriter):
         skymap_name : str, optional
             Name of the skymap, used in the metadata. If None, defaults to "ring_optimized_skymap".
         """
+        output_path = Path(output_path)
         ring_nums = skymap._ringNums
         ring_size = math.pi / (len(ring_nums) + 1)
         total_tracts = sum(ring_nums) + 2  # +2 for the poles
@@ -483,15 +487,15 @@ class RingOptimizedWriter(SkymapWriter):
             )
 
         # Ensure output directory exists
-        self._ensure_output_directory()
+        self._ensure_output_directory(output_path)
 
         # Record the output.
-        with open(self.output_path, "w") as f:
+        with open(output_path, "w") as f:
             yaml.dump(out, f, sort_keys=False)
-            print(f"✅ Ring-optimized skymap written to {self.output_path}")
+            print(f"✅ Ring-optimized skymap written to {output_path}")
 
 
-class RingOptimizedSkymapReader(SkymapReader):
+class RingOptimizedReader(SkymapReader):
     """A reader for ring-optimized skymaps written in YAML format.
 
     This class reads the YAML file and provides access to the metadata, rings, tracts, and poles.

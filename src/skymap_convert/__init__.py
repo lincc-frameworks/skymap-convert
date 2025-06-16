@@ -1,6 +1,9 @@
 from .geometry import box_to_convex_polygon, unit_vector3d_to_radec
 from .io import (
-    RingOptimizedSkymapReader,
+    RingOptimizedReader,
+    RingOptimizedWriter,
+    FullVertexReader,
+    FullVertexWriter,
     load_pickle_skymap,
     load_polygons_ra_dec,
     write_polygons_ra_dec,
@@ -16,6 +19,9 @@ __all__ = [
     "unit_vector3d_to_radec",
     "radians_to_degrees",
     "write_ring_optimized_skymap",
-    "RingOptimizedSkymapReader",
+    "FullVertexReader",
+    "FullVertexWriter",
+    "RingOptimizedReader",
+    "RingOptimizedWriter",
     "IterateTractAndRing",
 ]
