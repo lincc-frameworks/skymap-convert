@@ -1,10 +1,13 @@
-import pytest
-from skymap_convert.io import FullVertexWriter, FullVertexReader
-from skymap_convert.test_utils import get_poly_from_tract_id, polys_are_equiv
 import tempfile
 from pathlib import Path
 
+import pytest
 
+from skymap_convert.io import FullVertexReader, FullVertexWriter
+from skymap_convert.test_utils import get_poly_from_tract_id, polys_are_equiv
+
+
+@pytest.importorskip("lsst.skymap")
 @pytest.mark.parametrize("inner", [True, False])
 def test_loaded_polygons_equivalent(lsst_skymap, inner):
     """Test that polygons written and reloaded from disk are equivalent to ground truth."""

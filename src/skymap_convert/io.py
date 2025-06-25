@@ -346,7 +346,14 @@ class FullVertexReader(SkymapReader):
 class RingOptimizedWriter(SkymapWriter):
     """Writer for ring-optimized format skymaps."""
 
-    def write(self, skymap, output_path: Union[str, Path], inner=True, patches=False, skymap_name=None):
+    def write(
+        self,
+        skymap,
+        output_path: Union[str, Path],
+        inner=True,
+        patches=False,
+        skymap_name=None,
+    ):
         """Write a ring-optimized skymap to YAML format.
 
         Parameters
@@ -611,7 +618,10 @@ class RingOptimizedReader(SkymapReader):
         elif tract_id == 0:
             if self.poles:
                 dec_min, dec_max = self.poles[0]["dec_bounds"]
-                ra_start, ra_end = self.poles[0]["ra_bounds"][0], self.poles[0]["ra_bounds"][1]
+                ra_start, ra_end = (
+                    self.poles[0]["ra_bounds"][0],
+                    self.poles[0]["ra_bounds"][1],
+                )
                 ra_start = ra_start % 360.0
                 ra_end = ra_end % 360.0
                 quad = self._construct_quad(dec_min, dec_max, ra_start, ra_end)
@@ -627,7 +637,10 @@ class RingOptimizedReader(SkymapReader):
         elif tract_id == self.total_tracts - 1:
             if self.poles and len(self.poles) > 1:
                 dec_min, dec_max = self.poles[1]["dec_bounds"]
-                ra_start, ra_end = self.poles[1]["ra_bounds"][0], self.poles[1]["ra_bounds"][1]
+                ra_start, ra_end = (
+                    self.poles[1]["ra_bounds"][0],
+                    self.poles[1]["ra_bounds"][1],
+                )
                 ra_start = ra_start % 360.0
                 ra_end = ra_end % 360.0
                 quad = self._construct_quad(dec_min, dec_max, ra_start, ra_end)

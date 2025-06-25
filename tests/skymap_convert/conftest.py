@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+
 from skymap_convert.io import load_pickle_skymap
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[2]

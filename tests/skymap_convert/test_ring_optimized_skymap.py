@@ -1,10 +1,13 @@
-import pytest
-from skymap_convert import RingOptimizedReader, RingOptimizedWriter
-from skymap_convert.test_utils import get_poly_from_tract_id, polys_are_equiv
 import tempfile
 from pathlib import Path
 
+import pytest
 
+from skymap_convert import RingOptimizedReader, RingOptimizedWriter
+from skymap_convert.test_utils import get_poly_from_tract_id, polys_are_equiv
+
+
+@pytest.importorskip("lsst.skymap")
 @pytest.mark.parametrize("inner", [True])
 def test_ring_optimized_skymap_read_write(lsst_skymap, inner):
     """Test that polygons calculated by data written and reloaded from disk are equivalent to ground truth."""
@@ -34,6 +37,6 @@ def test_ring_optimized_skymap_read_write(lsst_skymap, inner):
             loaded = tract_data.to_convex_polygon()
 
         assert loaded is not None, f"Tract {tract_id} missing from loaded polygons."
-        assert polys_are_equiv(
-            ground_truth, loaded, atol=1e-8
-        ), f"Tract {tract_id} polygons are not equivalent"
+        assert polys_are_equiv(ground_truth, loaded, atol=1e-8), (
+            f"Tract {tract_id} polygons are not equivalent"
+        )

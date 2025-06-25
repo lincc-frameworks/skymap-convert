@@ -17,6 +17,8 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.10"
 dependencies = [
+    # To handle spherical sky polygons, not available on Windows
+    "lsst-sphgeom ; sys_platform == 'darwin' or sys_platform == 'linux'",
 ]
 
 [project.urls]
@@ -30,6 +32,9 @@ dev = [
     "pytest",
     "pytest-cov", # Used to report total code coverage
     "ruff", # Used for static linting of files
+]
+rubin-stack = [
+    ## TODO
 ]
 
 [build-system]
