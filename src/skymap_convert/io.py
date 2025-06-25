@@ -55,7 +55,9 @@ class TractData:
         # Validate that each vertex has exactly 2 coordinates
         for i, vertex in enumerate(self.quad):
             if len(vertex) != 2:
-                raise ValueError(f"Vertex {i} must have exactly 2 coordinates, got {len(vertex)}")
+                raise ValueError(
+                    f"Vertex {i} must have exactly 2 coordinates, got {len(vertex)}"
+                )
 
     def to_convex_polygon(self) -> ConvexPolygon:
         """Convert the tract quad to a ConvexPolygon."""
@@ -164,7 +166,9 @@ class SkymapReader(ABC):
 class FullVertexWriter(SkymapWriter):
     """Writer for full vertex format skymaps."""
 
-    def write(self, skymap, output_path: Union[str, Path], inner=True, write_patches=False):
+    def write(
+        self, skymap, output_path: Union[str, Path], inner=True, write_patches=False
+    ):
         """Write tract (and optionally patch) polygons to YAML using RA/Dec coordinates.
 
         Parameters
@@ -191,7 +195,8 @@ class FullVertexWriter(SkymapWriter):
                 poly = tract.outer_sky_polygon
 
             ra_dec_vertices = [
-                [radec[0], radec[1]] for radec in map(unit_vector3d_to_radec, poly.getVertices())
+                [radec[0], radec[1]]
+                for radec in map(unit_vector3d_to_radec, poly.getVertices())
             ]
             out["tracts"][tract_id] = {"polygon": ra_dec_vertices}
 
@@ -262,7 +267,10 @@ class FullVertexReader(SkymapReader):
         ra_dec_vertices = content["polygon"]
 
         # Check for degeneracy
-        unit_vecs = [UnitVector3d(LonLat.fromDegrees(ra % 360.0, dec)) for ra, dec in ra_dec_vertices]
+        unit_vecs = [
+            UnitVector3d(LonLat.fromDegrees(ra % 360.0, dec))
+            for ra, dec in ra_dec_vertices
+        ]
         unique_vecs = {tuple(round(coord, 12) for coord in vec) for vec in unit_vecs}
 
         if len(unique_vecs) < 3:
@@ -327,10 +335,15 @@ class FullVertexReader(SkymapReader):
             tract_id = int(tract_id_str)
             ra_dec_vertices = content["polygon"]
 
-            unit_vecs = [UnitVector3d(LonLat.fromDegrees(ra % 360.0, dec)) for ra, dec in ra_dec_vertices]
+            unit_vecs = [
+                UnitVector3d(LonLat.fromDegrees(ra % 360.0, dec))
+                for ra, dec in ra_dec_vertices
+            ]
 
             # Round for precision-safe uniqueness check
-            unique_vecs = {tuple(round(coord, 12) for coord in vec) for vec in unit_vecs}
+            unique_vecs = {
+                tuple(round(coord, 12) for coord in vec) for vec in unit_vecs
+            }
 
             if len(unique_vecs) < 3:
                 print(f"⚠️ Storing `None` for degenerate tract {tract_id}")
@@ -346,7 +359,14 @@ class FullVertexReader(SkymapReader):
 class RingOptimizedWriter(SkymapWriter):
     """Writer for ring-optimized format skymaps."""
 
-    def write(self, skymap, output_path: Union[str, Path], inner=True, patches=False, skymap_name=None):
+    def write(
+        self,
+        skymap,
+        output_path: Union[str, Path],
+        inner=True,
+        patches=False,
+        skymap_name=None,
+    ):
         """Write a ring-optimized skymap to YAML format.
 
         Parameters
@@ -380,7 +400,9 @@ class RingOptimizedWriter(SkymapWriter):
 
         # Handle the poles first.
         first_ring_middle_dec = ring_size * (1) - 0.5 * math.pi
-        first_ring_lower_dec = radians_to_degrees(first_ring_middle_dec - 0.5 * ring_size)
+        first_ring_lower_dec = radians_to_degrees(
+            first_ring_middle_dec - 0.5 * ring_size
+        )
         south_pole = {
             "tract_id": 0,
             "ring": -1,
@@ -611,7 +633,10 @@ class RingOptimizedReader(SkymapReader):
         elif tract_id == 0:
             if self.poles:
                 dec_min, dec_max = self.poles[0]["dec_bounds"]
-                ra_start, ra_end = self.poles[0]["ra_bounds"][0], self.poles[0]["ra_bounds"][1]
+                ra_start, ra_end = (
+                    self.poles[0]["ra_bounds"][0],
+                    self.poles[0]["ra_bounds"][1],
+                )
                 ra_start = ra_start % 360.0
                 ra_end = ra_end % 360.0
                 quad = self._construct_quad(dec_min, dec_max, ra_start, ra_end)
@@ -627,7 +652,10 @@ class RingOptimizedReader(SkymapReader):
         elif tract_id == self.total_tracts - 1:
             if self.poles and len(self.poles) > 1:
                 dec_min, dec_max = self.poles[1]["dec_bounds"]
-                ra_start, ra_end = self.poles[1]["ra_bounds"][0], self.poles[1]["ra_bounds"][1]
+                ra_start, ra_end = (
+                    self.poles[1]["ra_bounds"][0],
+                    self.poles[1]["ra_bounds"][1],
+                )
                 ra_start = ra_start % 360.0
                 ra_end = ra_end % 360.0
                 quad = self._construct_quad(dec_min, dec_max, ra_start, ra_end)

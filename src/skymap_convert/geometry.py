@@ -49,8 +49,6 @@ def unit_vector3d_to_radec(vec):
     tuple of float
         (RA in degrees [0, 360), Dec in degrees)
     """
-    from lsst.sphgeom import LonLat
-
     lonlat = LonLat(vec)
     ra = lonlat.getLon().asDegrees() % 360.0
     dec = lonlat.getLat().asDegrees()
