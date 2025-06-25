@@ -19,13 +19,16 @@ def box_to_convex_polygon(box):
     if box.isEmpty():
         raise ValueError("Cannot convert an empty Box to a ConvexPolygon.")
 
+    # Get the corners of the box
     lon_a, lon_b = box.getLon().getA().asRadians(), box.getLon().getB().asRadians()
     lon_min = min(lon_a, lon_b)
     lon_max = max(lon_a, lon_b)
     lat_a, lat_b = box.getLat().getA().asRadians(), box.getLat().getB().asRadians()
     lat_min = min(lat_a, lat_b)
     lat_max = max(lat_a, lat_b)
+    # todo : this may be an improper assumption, considering RA wrap around!!
 
+    # Convert corners to UnitVector3d
     corners = [
         LonLat.fromRadians(lon_min, lat_min),
         LonLat.fromRadians(lon_max, lat_min),
