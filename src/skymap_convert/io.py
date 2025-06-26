@@ -5,7 +5,6 @@ import pickle
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
 
 import yaml
 from lsst.sphgeom import Box, ConvexPolygon, LonLat, UnitVector3d
@@ -37,10 +36,10 @@ class TractData:
 
     tract_id: int
     ring: int
-    dec_bounds: Tuple[float, float]
-    ra_bounds: Tuple[float, float]
-    quad: List[List[float]]
-    is_pole: Optional[bool] = None
+    dec_bounds: tuple[float, float]
+    ra_bounds: tuple[float, float]
+    quad: list[list[float]]
+    is_pole: bool | None = None
 
     def __post_init__(self):
         """Validate tract data after initialization."""
@@ -85,7 +84,7 @@ class TractData:
             dec_bounds=tuple(data["dec_bounds"]),
             ra_bounds=tuple(data["ra_bounds"]),
             quad=data["quad"],
-            is_pole=data.get("is_pole", None),
+            is_pole=data.get("is_pole"),
         )
 
 
@@ -103,7 +102,7 @@ class SkymapWriter(ABC):
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
     @abstractmethod
-    def write(self, skymap, output_path: Union[str, Path], **kwargs):
+    def write(self, skymap, output_path: str| Path, **kwargs):
         """Write the skymap to file.
 
         Parameters
@@ -121,7 +120,7 @@ class SkymapWriter(ABC):
 class SkymapReader(ABC):
     """Abstract base class for reading skymaps from files."""
 
-    def __init__(self, file_path: Union[str, Path]):
+    def __init__(self, file_path: str | Path):
         """Initialize the reader with file path.
 
         Parameters
@@ -164,7 +163,7 @@ class SkymapReader(ABC):
 class FullVertexWriter(SkymapWriter):
     """Writer for full vertex format skymaps."""
 
-    def write(self, skymap, output_path: Union[str, Path], inner=True, write_patches=False):
+    def write(self, skymap, output_path: str | Path, inner=True, write_patches=False):
         """Write tract (and optionally patch) polygons to YAML using RA/Dec coordinates.
 
         Parameters
@@ -226,7 +225,7 @@ class FullVertexWriter(SkymapWriter):
 class FullVertexReader(SkymapReader):
     """Reader for full vertex format skymaps."""
 
-    def __init__(self, file_path: Union[str, Path]):
+    def __init__(self, file_path: str | Path):
         """Initialize the reader and load the YAML data.
 
         Parameters
@@ -242,7 +241,7 @@ class FullVertexReader(SkymapReader):
         if "tracts" not in self.data:
             raise ValueError(f"Invalid full vertex skymap file: {file_path}")
 
-    def get_tract(self, tract_id: int) -> Optional[TractData]:
+    def get_tract(self, tract_id: int) -> TractData | None:
         """Get tract data for a given tract ID.
 
         Parameters
@@ -349,7 +348,7 @@ class RingOptimizedWriter(SkymapWriter):
     def write(
         self,
         skymap,
-        output_path: Union[str, Path],
+        output_path: str | Path,
         inner=True,
         patches=False,
         skymap_name=None,
@@ -453,7 +452,7 @@ class RingOptimizedReader(SkymapReader):
     This class reads the YAML file and provides access to the metadata, rings, tracts, and poles.
     """
 
-    def __init__(self, file_path: Union[str, Path]):
+    def __init__(self, file_path: str | Path):
         """Initialize the reader and load ring-optimized skymap data.
 
         Parameters
