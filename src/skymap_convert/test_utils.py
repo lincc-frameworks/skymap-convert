@@ -1,17 +1,30 @@
 import numpy as np
 from lsst.sphgeom import Box, ConvexPolygon
 
-from .geometry import box_to_convex_polygon
+from .utils import box_to_convex_polygon
 
 
 def get_poly_from_tract_id(skymap, tract_id, inner=False) -> ConvexPolygon:
+    """Get the ConvexPolygon for a tract by its ID.
+
+    Parameters
+    ----------
+    skymap : lsst.skymap.SkyMap
+        The LSST SkyMap object.
+    tract_id : int
+        The ID of the tract to retrieve.
+    inner : bool, optional
+        If True, return the inner polygon. If False, return the outer polygon.
+        Default is False (outer polygon).
+
+    Returns
+    -------
+    ConvexPolygon
+        The polygon representing the tract's sky region.
+    """
     tract = skymap.generateTract(tract_id)
-    if inner:
-        res = tract.inner_sky_region
-    else:
-        res = tract.outer_sky_polygon
-    if isinstance(res, Box):
-        res = box_to_convex_polygon(res)
+    res = tract.inner_sky_region if inner else tract.outer_sky_polygon
+    res = box_to_convex_polygon(res) if isinstance(res, Box) else res
     return res
 
 
