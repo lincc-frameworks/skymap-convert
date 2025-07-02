@@ -1,5 +1,6 @@
-# Ignoreoutput skymap files
+# Ignore output skymap files
 *.yaml
+*.npy
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

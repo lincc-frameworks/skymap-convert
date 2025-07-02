@@ -1,7 +1,9 @@
 import math
 from abc import ABC, abstractmethod
+from datetime import datetime
 from pathlib import Path
 
+import numpy as np
 import yaml
 from lsst.sphgeom import Box
 
@@ -17,9 +19,17 @@ class SkymapWriter(ABC):
         Parameters
         ----------
         output_path : Path
-            The output file path
+            The output file path or directory where the output file will be written.
         """
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+        if isinstance(output_path, str):
+            output_path = Path(output_path)
+
+        # If output_path is a file, get its parent directory
+        if output_path.is_file():
+            output_path = output_path.parent
+
+        # Create the directory if it doesn't exist
+        output_path.mkdir(parents=True, exist_ok=True)
 
     @abstractmethod
     def write(self, skymap, output_path: str | Path, **kwargs):
@@ -186,3 +196,61 @@ class RingOptimizedWriter(SkymapWriter):
         with open(output_path, "w") as f:
             yaml.dump(out, f, sort_keys=False)
             print(f"✅ Ring-optimized skymap written to {output_path}")
+
+
+class ConvertedSkymapWriter(SkymapWriter):
+    """Writer for Converted Skymaps using .npy + metadata.yaml."""
+
+    def write(self, skymap, output_path: str | Path, skymap_name: str = "converted_skymap"):
+        """Write tract and patch vertices to .npy files with metadata.
+
+        Parameters
+        ----------
+        skymap : lsst.skymap.SkyMap
+            The LSST SkyMap object to write
+        output_path : str or Path
+            Directory path to write output files into
+        skymap_name : str, optional
+            Name of the skymap (for metadata purposes)
+        """
+        output_path = Path(output_path)
+        self._ensure_output_directory(output_path)
+
+        n_tracts = len(skymap)  # TODO - is this accounting for poles?
+        n_patches = 100  # fixed per tract # TODO - would be nice to make this dynamic, though we expect 100
+        tract_array = np.zeros((n_tracts, 4, 2), dtype=np.float64)
+        patch_array = np.zeros((n_tracts, n_patches, 4, 2), dtype=np.float64)
+
+        for tract_data in skymap:
+            tract_id = tract_data.getId()
+
+            # Get tract vertices (outer polygon only)
+            tract_verts = [
+                unit_vector3d_to_radec(vert) for vert in tract_data.outer_sky_polygon.getVertices()
+            ]
+            tract_array[tract_id] = tract_verts
+
+            # Get patch vertices
+            for patch_id in range(n_patches):
+                patch_info = tract_data.getPatchInfo(patch_id)
+                patch_verts = [
+                    unit_vector3d_to_radec(vert) for vert in patch_info.inner_sky_polygon.getVertices()
+                ]
+                patch_array[tract_id, patch_id] = patch_verts
+
+        # Save arrays
+        np.save(output_path / "tracts.npy", tract_array)
+        np.save(output_path / "patches.npy", patch_array)
+
+        # Save metadata
+        metadata = {
+            "name": skymap_name,
+            "generated": datetime.utcnow().isoformat() + "Z",
+            "n_tracts": n_tracts,
+            "n_patches_per_tract": n_patches,
+            "format_version": 1,
+        }
+        with open(output_path / "metadata.yaml", "w") as f:
+            yaml.dump(metadata, f)
+
+        print(f"✅ Wrote Converted Skymap to: {output_path}")

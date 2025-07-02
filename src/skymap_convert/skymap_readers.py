@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+import numpy as np
 import yaml
 from lsst.sphgeom import ConvexPolygon, LonLat, UnitVector3d
 
@@ -38,16 +39,190 @@ class SkymapReader(ABC):
         """
         pass
 
-    @abstractmethod
-    def get_all_tracts(self) -> dict:
-        """Get all tract data.
+    # @abstractmethod
+    # def get_all_tracts(self) -> dict:
+    #     """Get all tract data.
+
+    #     Returns
+    #     -------
+    #     dict
+    #         Dictionary mapping tract ID to TractData
+    #     """
+    #     pass
+
+
+class ConvertedSkymapReader(SkymapReader):
+    """Reader for Converted Skymaps written as .npy files with metadata.
+
+    TODO : make a list of the attributes people might want
+    - n_tracts : int
+    - n_patches_per_tract : int
+    - metadata : dict
+    - tracts : np.ndarray
+    - patches : np.ndarray
+    """
+
+    def __init__(self, file_path: str | Path, safe_loading: bool = False):
+        """Initialize the reader and load the .npy + metadata files.
+
+        Parameters
+        ----------
+        file_path : str or Path
+            Path to the directory containing tracts.npy, patches.npy, and metadata.yaml
+        safe_loading : bool, optional
+            If True, raise an exception on degenerate tract or patch polygons
+        """
+        super().__init__(file_path)
+        self.safe_loading = safe_loading
+
+        self.metadata_path = self.file_path / "metadata.yaml"
+        self.tracts_path = self.file_path / "tracts.npy"
+        self.patches_path = self.file_path / "patches.npy"
+
+        # Load metadata
+        with open(self.metadata_path, "r") as f:
+            self.metadata = yaml.safe_load(f)
+
+        self.n_tracts = self.metadata["n_tracts"]
+        self.n_patches_per_tract = self.metadata["n_patches_per_tract"]
+
+        # Memory-map arrays
+        self.tracts = np.load(self.tracts_path, mmap_mode="r")
+        self.patches = np.load(self.patches_path, mmap_mode="r")
+
+    def _verify_nondegeneracy(self, vertices: list[list[float]]):
+        """Verify that the polygon is non-degenerate by checking area.
+
+        Parameters
+        ----------
+        vertices : list of [RA, Dec]
+            The 4 polygon vertices (in degrees)
+
+        Raises
+        ------
+        ValueError
+            If polygon appears degenerate (zero-area)
+        """
+        if len(vertices) < 3:
+            raise ValueError("Polygon has fewer than 3 vertices")
+
+        # Use the first three vertices to compute area of the triangle they form
+        a = np.array(vertices[0])
+        b = np.array(vertices[1])
+        c = np.array(vertices[2])
+
+        # Vector AB and AC
+        ab = b - a
+        ac = c - a
+
+        # Compute 2D cross product (scalar) to get area of parallelogram, then halve
+        cross = ab[0] * ac[1] - ab[1] * ac[0]
+        area = 0.5 * abs(cross)
+
+        if area < 1e-6:  # Rough threshold for degeneracy at arcsecond scale
+            raise ValueError("Degenerate polygon: near-zero area detected")
+
+    def get_tract_vertices(self, tract_id: int) -> list[list[float]]:
+        """Return the outer RA/Dec vertices of the specified tract.
+
+        Parameters
+        ----------
+        tract_id : int
+            ID of the tract to retrieve
 
         Returns
         -------
-        dict
-            Dictionary mapping tract ID to TractData
+        list of [RA, Dec]
+            List of four polygon vertices
         """
-        pass
+        if not (0 <= tract_id < self.n_tracts):
+            raise IndexError(f"Tract ID {tract_id} is out of bounds")
+
+        verts = self.tracts[tract_id].tolist()
+
+        if self.safe_loading:
+            self._verify_nondegeneracy(verts)
+
+        return verts
+
+    def get_patch_vertices(self, tract_id: int, patch_id: int) -> list[list[float]]:
+        """Return the RA/Dec vertices of the specified patch.
+
+        Parameters
+        ----------
+        tract_id : int
+            ID of the tract containing the patch
+        patch_id : int
+            ID of the patch within the tract
+
+        Returns
+        -------
+        list of [RA, Dec]
+            List of four polygon vertices
+        """
+        if not (0 <= tract_id < self.n_tracts):
+            raise IndexError(f"Tract ID {tract_id} is out of bounds")
+        if not (0 <= patch_id < self.n_patches_per_tract):
+            raise IndexError(f"Patch ID {patch_id} is out of bounds for tract {tract_id}")
+
+        verts = self.patches[tract_id, patch_id].tolist()
+
+        if self.safe_loading:
+            self._verify_nondegeneracy(verts)
+
+        return verts
+
+    def get_tract(self, tract_id: int) -> TractData:
+        """Return tract data for a given ID. (Slated for deprecation)
+
+        Parameters
+        ----------
+        tract_id : int
+            ID of the tract
+
+        Returns
+        -------
+        TractData
+            TractData object with quad and bounds
+
+        Notes
+        -----
+        This method may be deprecated in future releases in favor of direct `get_tract_vertices`.
+        """
+        quad = self.get_tract_vertices(tract_id)
+
+        ras = [ra for ra, _ in quad]
+        decs = [dec for _, dec in quad]
+        dec_bounds = (min(decs), max(decs))
+
+        ra_min, ra_max = min(ras), max(ras)
+        if ra_max - ra_min > 180:  # RA wraparound
+            sorted_ras = sorted(ras)
+            max_gap = 0
+            gap_start = 0
+            for i in range(len(sorted_ras)):
+                gap = (sorted_ras[(i + 1) % 4] - sorted_ras[i]) % 360
+                if gap > max_gap:
+                    max_gap = gap
+                    gap_start = sorted_ras[(i + 1) % 4]
+            ra_bounds = (gap_start, (gap_start - max_gap) % 360)
+        else:
+            ra_bounds = (ra_min, ra_max)
+
+        return TractData(
+            tract_id=tract_id, ring=-1, dec_bounds=dec_bounds, ra_bounds=ra_bounds, quad=quad, is_pole=None
+        )
+
+    def summarize(self):
+        """Print a summary of the converted skymap contents."""
+        print("Skymap Summary")
+        print("-" * 40)
+        print(f"Path:               {self.file_path}")
+        print(f"Name:               {self.metadata.get('name', '[unknown]')}")
+        print(f"Generated:          {self.metadata.get('generated', '[unknown]')}")
+        print(f"Number of tracts:   {self.n_tracts}")
+        print(f"Patches per tract:  {self.n_patches_per_tract}")
+        print(f"Metadata keys:      {list(self.metadata.keys())}")
 
 
 class FullVertexReader(SkymapReader):
