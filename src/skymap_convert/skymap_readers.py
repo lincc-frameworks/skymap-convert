@@ -1,3 +1,5 @@
+import gzip
+import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -77,7 +79,9 @@ class ConvertedSkymapReader(SkymapReader):
 
         self.metadata_path = self.file_path / "metadata.yaml"
         self.tracts_path = self.file_path / "tracts.npy"
-        self.patches_path = self.file_path / "patches.npy"
+        # self.patches_path = self.file_path / "patches.npy"
+        self.patches_path = self._decompress_patches_gz()
+        self.patches = np.load(self.patches_path, mmap_mode="r")
 
         # Load metadata
         with open(self.metadata_path, "r") as f:
@@ -89,6 +93,26 @@ class ConvertedSkymapReader(SkymapReader):
         # Memory-map arrays
         self.tracts = np.load(self.tracts_path, mmap_mode="r")
         self.patches = np.load(self.patches_path, mmap_mode="r")
+
+    def _decompress_patches_gz(self) -> Path:
+        """Decompress patches.npy.gz if not already done."""
+        patches_gz_path = self.file_path / "patches.npy.gz"
+        patches_path = self.file_path / "patches.npy"
+
+        # If already decompressed during this session, just return it.
+        if hasattr(self, "_decompressed_once") and self._decompressed_once:
+            return patches_path
+
+        # Delete if it exists (stale or from last session).
+        if patches_path.exists():
+            patches_path.unlink()
+
+        # Decompress.
+        with gzip.open(patches_gz_path, "rb") as f_in, open(patches_path, "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+        self._decompressed_once = True
+        return patches_path
 
     def _verify_nondegeneracy(self, vertices: list[list[float]]):
         """Verify that the polygon is non-degenerate by checking area.

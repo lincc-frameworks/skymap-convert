@@ -1,4 +1,6 @@
+import gzip
 import math
+import shutil
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
@@ -91,7 +93,7 @@ class FullVertexWriter(SkymapWriter):
         with open(output_path, "w") as f:
             yaml.dump(out, f, sort_keys=False)
 
-        print(f"✅ Wrote {len(out['tracts'])} tract polygons to {output_path}")
+        print(f"Wrote {len(out['tracts'])} tract polygons to {output_path}")
 
 
 class RingOptimizedWriter(SkymapWriter):
@@ -195,7 +197,7 @@ class RingOptimizedWriter(SkymapWriter):
         # Record the output.
         with open(output_path, "w") as f:
             yaml.dump(out, f, sort_keys=False)
-            print(f"✅ Ring-optimized skymap written to {output_path}")
+            print(f"Ring-optimized skymap written to {output_path}")
 
 
 class ConvertedSkymapWriter(SkymapWriter):
@@ -238,9 +240,21 @@ class ConvertedSkymapWriter(SkymapWriter):
                 ]
                 patch_array[tract_id, patch_id] = patch_verts
 
-        # Save arrays
+        # Save tracts (uncompressed)
         np.save(output_path / "tracts.npy", tract_array)
-        np.save(output_path / "patches.npy", patch_array)
+
+        # Save patches (temporary .npy before compression)
+        patches_path = output_path / "patches.npy"
+        patches_gz_path = output_path / "patches.npy.gz"
+
+        np.save(patches_path, patch_array)
+
+        # Compress to patches.npy.gz
+        with open(patches_path, "rb") as f_in, gzip.open(patches_gz_path, "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+        # Remove uncompressed version
+        patches_path.unlink()
 
         # Save metadata
         metadata = {
@@ -253,4 +267,4 @@ class ConvertedSkymapWriter(SkymapWriter):
         with open(output_path / "metadata.yaml", "w") as f:
             yaml.dump(metadata, f)
 
-        print(f"✅ Wrote Converted Skymap to: {output_path}")
+        print(f"Wrote Converted Skymap to: {output_path}")

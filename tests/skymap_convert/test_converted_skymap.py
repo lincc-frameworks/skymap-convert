@@ -1,81 +1,75 @@
-import tempfile
-from pathlib import Path
-
-import numpy as np
 import pytest
-from skymap_convert import ConvertedSkymapReader, ConvertedSkymapWriter
-from skymap_convert.test_utils import get_poly_from_tract_id, polys_are_equiv
+from skymap_convert.test_utils import (
+    get_quad_from_patch_id,
+    get_quad_from_tract_id,
+    quads_are_equiv,
+)
+from tqdm import tqdm
+
+TRACT_SAMPLES = [1, 250, 1899]
+PATCH_SAMPLES = [0, 42, 99]
 
 
-def test_converted_skymap_structure_and_summary(lsst_skymap, capsys):
+def test_converted_skymap_structure_and_summary(lsst_skymap, converted_skymap_reader, capsys):
     """Test that ConvertedSkymapWriter produces readable output with correct structure."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        output_path = Path(tmpdir)
+    # Ensure expected files exist
+    assert (converted_skymap_reader.metadata_path).exists()
+    assert (converted_skymap_reader.tracts_path).exists()
+    assert (converted_skymap_reader.patches_path).exists()
 
-        writer = ConvertedSkymapWriter()
-        writer.write(lsst_skymap, output_path, skymap_name="test_skymap")
+    # Reader loads without error
+    assert converted_skymap_reader.n_tracts == len(lsst_skymap)
+    assert converted_skymap_reader.n_patches_per_tract == 100
+    assert converted_skymap_reader.metadata["name"] == "test_skymap"
 
-        # Ensure expected files exist
-        assert (output_path / "metadata.yaml").exists()
-        assert (output_path / "tracts.npy").exists()
-        assert (output_path / "patches.npy").exists()
-
-        # Reader loads without error
-        reader = ConvertedSkymapReader(output_path)
-        assert reader.n_tracts == len(lsst_skymap)
-        assert reader.n_patches_per_tract == 100
-        assert reader.metadata["name"] == "test_skymap"
-
-        # Capture and check summary output
-        reader.summarize()
-        output = capsys.readouterr().out
-        assert "Skymap Summary" in output
-        assert "test_skymap" in output
+    # Capture and check summary output
+    converted_skymap_reader.summarize()
+    output = capsys.readouterr().out
+    assert "Skymap Summary" in output
+    assert "test_skymap" in output
 
 
-def get_patch_poly_from_ids(skymap, tract_id, patch_id):
-    """Get ConvexPolygon for a given patch."""
-    patch_info = skymap.generateTract(tract_id).getPatchInfo(patch_id)
-    return patch_info.inner_sky_polygon
+@pytest.mark.parametrize("tract_id", TRACT_SAMPLES)
+def test_sample_tracts_and_patches(lsst_skymap, converted_skymap_reader, tract_id, tmp_path):
+    """Quick check that a subset of tracts and patches match after conversion."""
+    pytest.importorskip("lsst.skymap")
+
+    # Tract comparison
+    truth_quad = get_quad_from_tract_id(lsst_skymap, tract_id)
+    loaded_quad = converted_skymap_reader.get_tract_vertices(tract_id)
+
+    assert quads_are_equiv(truth_quad, loaded_quad), f"Tract {tract_id} mismatch"
+
+    # Patch comparisons
+    for patch_id in PATCH_SAMPLES:
+        truth_patch = get_quad_from_patch_id(lsst_skymap, tract_id, patch_id)
+        loaded_patch = converted_skymap_reader.get_patch_vertices(tract_id, patch_id)
+
+        assert quads_are_equiv(truth_patch, loaded_patch), f"Patch {patch_id} in tract {tract_id} mismatch"
 
 
-def test_converted_skymap_equivalent_to_original(lsst_skymap):
+@pytest.mark.longrun
+def test_converted_skymap_equivalent_to_original(lsst_skymap, converted_skymap_reader):
     """Test that ConvertedSkymapReader matches the original LSST SkyMap."""
     pytest.importorskip("lsst.skymap")
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        output_path = Path(tmpdir)
+    # Optional: override tqdm to be quiet unless --verbose (TODO)
+    tract_ids = range(lsst_skymap._numTracts)
+    for tract_id in tqdm(tract_ids, desc="Checking tracts", leave=False):
+        # if tract_id in (0, lsst_skymap._numTracts - 1):
+        #     continue  # Skip poles for now
 
-        writer = ConvertedSkymapWriter()
-        writer.write(lsst_skymap, output_path, skymap_name="test_skymap")
+        # Tract check
+        truth_quad = get_quad_from_tract_id(lsst_skymap, tract_id, inner=False)
+        loaded_quad = converted_skymap_reader.get_tract_vertices(tract_id)
 
-        reader = ConvertedSkymapReader(output_path)
+        assert quads_are_equiv(truth_quad, loaded_quad), f"Tract {tract_id} quads not equivalent"
 
-        for tract_id in range(lsst_skymap._numTracts):
-            if tract_id in (0, lsst_skymap._numTracts - 1):
-                continue  # Skip poles for now
+        # Patch check
+        for patch_id in range(100):
+            truth_patch_quad = get_quad_from_patch_id(lsst_skymap, tract_id, patch_id)
+            loaded_patch_quad = converted_skymap_reader.get_patch_vertices(tract_id, patch_id)
 
-            # === TRACT CHECK ===
-            truth_poly = get_poly_from_tract_id(lsst_skymap, tract_id, inner=False)
-            loaded_quad = reader.get_tract_vertices(tract_id)
-            loaded_poly = get_poly_from_tract_id(lsst_skymap, tract_id, inner=False)  # reuse to convert quad
-            loaded_poly.vertices = [np.array(v) for v in loaded_quad]
-
-            assert polys_are_equiv(truth_poly, loaded_poly), f"Tract {tract_id} polygons not equivalent"
-
-            # === PATCH CHECK ===
-            for patch_id in range(100):
-                truth_patch_poly = get_patch_poly_from_ids(lsst_skymap, tract_id, patch_id)
-                loaded_patch_verts = reader.get_patch_vertices(tract_id, patch_id)
-
-                # Convert to ConvexPolygon for comparison
-                from lsst.sphgeom import ConvexPolygon, LonLat, UnitVector3d
-
-                unit_vecs = [
-                    UnitVector3d(LonLat.fromDegrees(ra % 360.0, dec)) for ra, dec in loaded_patch_verts
-                ]
-                loaded_patch_poly = ConvexPolygon(unit_vecs)
-
-                assert polys_are_equiv(
-                    truth_patch_poly, loaded_patch_poly
-                ), f"Patch {patch_id} in tract {tract_id} not equivalent"
+            assert quads_are_equiv(
+                truth_patch_quad, loaded_patch_quad
+            ), f"Patch {patch_id} in tract {tract_id} not equivalent"

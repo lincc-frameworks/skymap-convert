@@ -29,12 +29,16 @@ dependencies = [
 dev = [
     "jupyter", # Clears output from Jupyter notebooks
     "pre-commit", # Used to run checks before finalizing a git commit
-    "pytest",
-    "pytest-cov", # Used to report total code coverage
     "ruff", # Used for static linting of files
+    "pytest", # Used to run tests
+    "pytest-cov", # Used to report total code coverage
+    "pytest-skip-slow", # Used to skip slow tests
+    "tqdm", # Used to show progress bars in the terminal
 ]
 rubin-stack = [
     ## TODO
+    # Actually - maybe split this into .[test] and .[run-conversion] style groups?
+    # More focused on the activity planned, and the docs can explain that they'll require the rubin stack
 ]
 
 [build-system]
@@ -54,6 +58,9 @@ testpaths = [
     "docs",
 ]
 addopts = "--doctest-modules --doctest-glob=*.rst"
+markers = [
+    "longrun: marks tests as long running (add --longrun to run)"
+]
 
 [tool.isort]
 profile = "black"

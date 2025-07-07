@@ -1,6 +1,7 @@
-# Ignore output skymap files
-*.yaml
+# Ignore uncompressed output skymap files
 *.npy
+*/full_vertex/*.yaml
+*/ring_optimized/*.yaml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
