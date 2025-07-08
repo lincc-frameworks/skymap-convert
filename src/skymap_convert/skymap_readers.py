@@ -7,6 +7,7 @@ import numpy as np
 import yaml
 from lsst.sphgeom import ConvexPolygon, LonLat, UnitVector3d
 
+from .plotting import plot_patches
 from .tract_data import TractData
 
 
@@ -25,9 +26,49 @@ class SkymapReader(ABC):
         if not self.file_path.exists():
             raise FileNotFoundError(f"Skymap file not found: {file_path}")
 
+    def help(self):
+        """Display available public methods and their descriptions.
+
+        This method introspects the current reader instance to show all
+        available public methods along with brief descriptions extracted
+        from their docstrings.
+        """
+        import inspect
+
+        class_name = self.__class__.__name__
+        print(f"{class_name} - Available Methods")
+        print("=" * (len(class_name) + 21))
+        print()
+
+        # Get all methods that don't start with underscore (public methods)
+        methods = []
+        for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
+            if not name.startswith("_"):
+                methods.append((name, method))
+
+        # Sort methods alphabetically
+        methods.sort(key=lambda x: x[0])
+
+        for method_name, method in methods:
+            # Get the first line of the docstring as brief description
+            doc = inspect.getdoc(method)
+            if doc:
+                # Take first sentence or first line as brief description
+                brief = doc.split(".")[0] + "." if "." in doc else doc.split("\n")[0]
+                # Limit length to keep it concise
+                if len(brief) > 80:
+                    brief = brief[:77] + "..."
+            else:
+                brief = "No description available"
+
+            print(f"  {method_name:20} - {brief}")
+
+        print()
+        print("For detailed information about any method, use: help(reader.method_name)")
+
     @abstractmethod
     def get_tract(self, tract_id: int) -> TractData:
-        """Get tract data for a given tract ID.
+        """Get tract data for a given tract ID (legacy; may be deprecated).
 
         Parameters
         ----------
@@ -77,9 +118,17 @@ class ConvertedSkymapReader(SkymapReader):
         super().__init__(file_path)
         self.safe_loading = safe_loading
 
+        # Check if the path is a pickle file (common mistake)
+        if self.file_path.is_file() and self.file_path.suffix in [".pickle", ".pkl"]:
+            raise ValueError(
+                f"ConvertedSkymapReader expects a directory containing converted skymap files, "
+                f"but received a pickle file: {self.file_path}. "
+                f"To read pickle files, first convert them using ConvertedSkymapWriter or "
+                f"load them directly using load_pickle_skymap() from skymap_convert.utils."
+            )
+
         self.metadata_path = self.file_path / "metadata.yaml"
-        self.tracts_path = self.file_path / "tracts.npy"
-        # self.patches_path = self.file_path / "patches.npy"
+        # self.tracts_path = self.file_path / "tracts.npy" # TMP TODO
         self.patches_path = self._decompress_patches_gz()
         self.patches = np.load(self.patches_path, mmap_mode="r")
 
@@ -91,8 +140,10 @@ class ConvertedSkymapReader(SkymapReader):
         self.n_patches_per_tract = self.metadata["n_patches_per_tract"]
 
         # Memory-map arrays
-        self.tracts = np.load(self.tracts_path, mmap_mode="r")
+        # self.tracts = np.load(self.tracts_path, mmap_mode="r") # TODO TMP
         self.patches = np.load(self.patches_path, mmap_mode="r")
+
+        # TODO could be nice to check if the metadata matches the arrays here.
 
     def _decompress_patches_gz(self) -> Path:
         """Decompress patches.npy.gz if not already done."""
@@ -197,7 +248,7 @@ class ConvertedSkymapReader(SkymapReader):
         return verts
 
     def get_tract(self, tract_id: int) -> TractData:
-        """Return tract data for a given ID. (Slated for deprecation)
+        """Return tract data for a given ID (slated for deprecation).
 
         Parameters
         ----------
@@ -237,16 +288,66 @@ class ConvertedSkymapReader(SkymapReader):
             tract_id=tract_id, ring=-1, dec_bounds=dec_bounds, ra_bounds=ra_bounds, quad=quad, is_pole=None
         )
 
-    def summarize(self):
-        """Print a summary of the converted skymap contents."""
+    def summarize(self, allow_malformed: bool = False):
+        """Print a summary of the converted skymap contents.
+
+        Parameters
+        ----------
+        allow_malformed : bool, optional
+            If True, allow malformed skymaps to be summarized.
+
+        Raises
+        ------
+        ValueError
+            If the skymap is malformed and allow_malformed is False.
+        """
+        # Check if the skymap is malformed.
+        # To be well-formed, skymap must exist, and have designated file_path, metadata, tracts, and patches.
+        if not allow_malformed and (
+            not self.file_path.exists()
+            or not self.metadata
+            or not hasattr(self, "tracts")
+            or not hasattr(self, "patches")
+        ):
+            raise ValueError(f"Malformed skymap: {self.file_path}")
         print("Skymap Summary")
         print("-" * 40)
-        print(f"Path:               {self.file_path}")
+        print(f"Path:               {self.file_path if self.file_path else '[unknown]'}")
         print(f"Name:               {self.metadata.get('name', '[unknown]')}")
         print(f"Generated:          {self.metadata.get('generated', '[unknown]')}")
-        print(f"Number of tracts:   {self.n_tracts}")
-        print(f"Patches per tract:  {self.n_patches_per_tract}")
-        print(f"Metadata keys:      {list(self.metadata.keys())}")
+        print(
+            f"Metadata keys:      "
+            f"{list(self.metadata.keys()) if hasattr(self, 'metadata') else '[unknown]'}"
+        )
+        print(f"Number of tracts:   {self.n_tracts if hasattr(self, 'n_tracts') else '[unknown]'}")
+        print(
+            f"Patches per tract:  "
+            f"{self.n_patches_per_tract if hasattr(self, 'n_patches_per_tract') else '[unknown]'}"
+        )
+
+        # Print file sizes for tracts and patches if available.
+        if hasattr(self, "tracts_path") and self.tracts_path.exists():
+            print(f"Tracts file path:   {self.tracts_path}")
+            print(f"Tracts file size:   {self.tracts_path.stat().st_size / 1e6:.2f} MB")
+        if hasattr(self, "patches_path") and self.patches_path.exists():
+            print(f"Patches file path:  {self.patches_path}")
+            print(f"Patches file size:  {self.patches_path.stat().st_size / 1e6:.2f} MB")
+
+    def plot_patches(self, tract_patch_ids, margin=0.01, tract_outer_boundaries=None, plot_title=None):
+        """Plot multiple patches in a single figure.
+
+        Parameters
+        ----------
+        tract_patch_ids : list of tuples
+            List of (tract_id, patch_id) tuples to plot
+        margin : float, optional
+            Margin (in percent) around the plotted area (default is 0.01)
+        tract_outer_boundaries : int, list of int, optional
+            If provided, plots the outer boundaries of specified tracts.
+        plot_title : str, optional
+            Title for the plot (default is None)
+        """
+        return plot_patches(self, tract_patch_ids, margin, tract_outer_boundaries, plot_title)
 
 
 class FullVertexReader(SkymapReader):

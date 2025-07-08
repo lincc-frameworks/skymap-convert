@@ -49,4 +49,5 @@ def skymap_out_dir():
 @pytest.fixture(scope="session")
 def lsst_skymap():
     """Fixture to provide a LSST skymap object."""
+    pytest.importorskip("lsst.skymap")
     return load_pickle_skymap(RAW_SKYMAP_DIR / "skyMap_lsst_cells_v1_skymaps.pickle")
