@@ -11,7 +11,8 @@ enforce_style:
 - isort
 failure_notification: []
 include_benchmarks: false
-include_docs: false
+include_docs: true
+include_notebooks: true
 mypy_type_checking: none
 package_name: skymap_convert
 project_license: MIT
