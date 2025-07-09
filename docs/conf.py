@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.abspath("../src/"))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "skymap_convert"
-copyright = "2024, Olivia Lynn"
+copyright = "2025, Olivia Lynn"
 author = "Olivia Lynn"
 release = version("skymap_convert")
 # for example take major/minor
@@ -28,6 +28,8 @@ extensions = ["sphinx.ext.mathjax", "sphinx.ext.napoleon", "sphinx.ext.viewcode"
 
 extensions.append("autoapi.extension")
 extensions.append("nbsphinx")
+
+nbsphinx_allow_errors = True
 
 # -- sphinx-copybutton configuration ----------------------------------------
 extensions.append("sphinx_copybutton")

@@ -17,6 +17,10 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.10"
 dependencies = [
+    # Core dependencies
+    "numpy",
+    "astropy",
+    "matplotlib",
     # To handle spherical sky polygons, not available on Windows
     "lsst-sphgeom ; sys_platform == 'darwin' or sys_platform == 'linux'",
 ]

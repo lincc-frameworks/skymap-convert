@@ -1,6 +1,8 @@
 Notebooks
 ========================================================================================
 
+Tutorials and examples for using the skymap-convert package
+----------------------------------------------------------------------------------------
 .. toctree::
 
-    Introducing Jupyter Notebooks <notebooks/intro_notebook>
+    Plot skymap files <notebooks/Skymap plotting methods>
