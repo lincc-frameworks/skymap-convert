@@ -20,7 +20,7 @@ pip install .
 
 2. Import a skymap reader.
 ```python
-import skymap-convert
+import skymap_convert
 
 reader = skymap_convert.ConvertedSkymapReader(converted_skymap_path)
 ```
