@@ -226,10 +226,11 @@ class ConvertedSkymapWriter(SkymapWriter):
         for tract_data in skymap:
             tract_id = tract_data.getId()
 
-            # Get tract vertices (outer polygon only)
-            tract_verts = [
-                unit_vector3d_to_radec(vert) for vert in tract_data.outer_sky_polygon.getVertices()
-            ]
+            # Get tract vertices (inner region only)
+            inner_sky_region = tract_data.inner_sky_region
+            if isinstance(inner_sky_region, Box):
+                inner_sky_region = box_to_convex_polygon(inner_sky_region)
+            tract_verts = [unit_vector3d_to_radec(vert) for vert in inner_sky_region.getVertices()]
             tract_array[tract_id] = tract_verts
 
             # Get patch vertices

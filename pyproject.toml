@@ -38,6 +38,8 @@ dev = [
     "pytest-cov", # Used to report total code coverage
     "pytest-skip-slow", # Used to skip slow tests
     "tqdm", # Used to show progress bars in the terminal
+    "lsdb", # Used for the Skymaps Overview notebook
+    "dask", # Used for the Skymaps Overview notebook
 ]
 
 [build-system]
