@@ -39,11 +39,6 @@ dev = [
     "pytest-skip-slow", # Used to skip slow tests
     "tqdm", # Used to show progress bars in the terminal
 ]
-rubin-stack = [
-    ## TODO
-    # Actually - maybe split this into .[test] and .[run-conversion] style groups?
-    # More focused on the activity planned, and the docs can explain that they'll require the rubin stack
-]
 
 [build-system]
 requires = [

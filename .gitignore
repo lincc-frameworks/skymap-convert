@@ -1,5 +1,5 @@
 # Ignore uncompressed output skymap files
-*.npy
+patches.npy
 */full_vertex/*.yaml
 */ring_optimized/*.yaml
 
