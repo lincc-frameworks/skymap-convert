@@ -21,16 +21,13 @@ dependencies = [
     "numpy>=1.21",
     "astropy>=4.0",
     "matplotlib>=3.4",
-    # To handle spherical sky polygons, not available on Windows
-    "lsst-sphgeom ; sys_platform == 'darwin' or sys_platform == 'linux'",
 ]
-
-[project.urls]
-"Source Code" = "https://github.com/lincc-frameworks/skymap_convert"
 
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
 [project.optional-dependencies]
 dev = [
+    # To handle spherical sky polygons, not available on Windows
+    "lsst-sphgeom ; sys_platform == 'darwin' or sys_platform == 'linux'",
     "jupyter", # Clears output from Jupyter notebooks
     "pre-commit", # Used to run checks before finalizing a git commit
     "ruff", # Used for static linting of files
@@ -41,6 +38,9 @@ dev = [
     "lsdb", # Used for the Skymaps Overview notebook
     "dask", # Used for the Skymaps Overview notebook
 ]
+
+[project.urls]
+"Source Code" = "https://github.com/lincc-frameworks/skymap_convert"
 
 [build-system]
 requires = [
