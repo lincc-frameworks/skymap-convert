@@ -128,7 +128,7 @@ class ConvertedSkymapReader(SkymapReader):
             )
 
         self.metadata_path = self.file_path / "metadata.yaml"
-        # self.tracts_path = self.file_path / "tracts.npy" # TMP TODO
+        self.tracts_path = self.file_path / "tracts.npy"
         self.patches_path = self._decompress_patches_gz()
         self.patches = np.load(self.patches_path, mmap_mode="r")
 
@@ -140,7 +140,7 @@ class ConvertedSkymapReader(SkymapReader):
         self.n_patches_per_tract = self.metadata["n_patches_per_tract"]
 
         # Memory-map arrays
-        # self.tracts = np.load(self.tracts_path, mmap_mode="r") # TODO TMP
+        self.tracts = np.load(self.tracts_path, mmap_mode="r")
         self.patches = np.load(self.patches_path, mmap_mode="r")
 
         # TODO could be nice to check if the metadata matches the arrays here.
@@ -303,13 +303,15 @@ class ConvertedSkymapReader(SkymapReader):
         """
         # Check if the skymap is malformed.
         # To be well-formed, skymap must exist, and have designated file_path, metadata, tracts, and patches.
-        if not allow_malformed and (
-            not self.file_path.exists()
-            or not self.metadata
-            or not hasattr(self, "tracts")
-            or not hasattr(self, "patches")
-        ):
-            raise ValueError(f"Malformed skymap: {self.file_path}")
+        if not allow_malformed:
+            if not self.file_path.exists():
+                raise ValueError(f"Skymap file does not exist: {self.file_path}")
+            if not self.metadata:
+                raise ValueError(f"Skymap metadata is missing: {self.file_path}")
+            if not hasattr(self, "tracts"):
+                raise ValueError(f"Skymap tracts are missing: {self.file_path}")
+            if not hasattr(self, "patches"):
+                raise ValueError(f"Skymap patches are missing: {self.file_path}")
         print("Skymap Summary")
         print("-" * 40)
         print(f"Path:               {self.file_path if self.file_path else '[unknown]'}")
