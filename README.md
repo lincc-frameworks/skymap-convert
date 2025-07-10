@@ -6,7 +6,7 @@
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lincc-frameworks/skymap-convert/smoke-test.yml)](https://github.com/lincc-frameworks/skymap-convert/actions/workflows/smoke-test.yml)
 
 # Skymap Convert
-A dependency-light package for skymap operations: use the LSST skymap without the LSST stack.
+A dependency-light package for skymap operations--use the LSST skymap without the LSST stack.
 
 ## Quick start
 
