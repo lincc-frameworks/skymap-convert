@@ -35,7 +35,7 @@ def test_sample_tracts_and_patches(lsst_skymap, converted_skymap_reader, tract_i
     pytest.importorskip("lsst.skymap")
 
     # Tract comparison
-    truth_quad = get_quad_from_tract_id(lsst_skymap, tract_id)
+    truth_quad = get_quad_from_tract_id(lsst_skymap, tract_id, inner=True)
     loaded_quad = converted_skymap_reader.get_tract_vertices(tract_id)
 
     assert quads_are_equiv(truth_quad, loaded_quad), f"Tract {tract_id} mismatch"
@@ -56,11 +56,8 @@ def test_converted_skymap_equivalent_to_original(lsst_skymap, converted_skymap_r
     # Optional: override tqdm to be quiet unless --verbose (TODO)
     tract_ids = range(lsst_skymap._numTracts)
     for tract_id in tqdm(tract_ids, desc="Checking tracts", leave=False):
-        # if tract_id in (0, lsst_skymap._numTracts - 1):
-        #     continue  # Skip poles for now
-
         # Tract check
-        truth_quad = get_quad_from_tract_id(lsst_skymap, tract_id, inner=False)
+        truth_quad = get_quad_from_tract_id(lsst_skymap, tract_id, inner=True)
         loaded_quad = converted_skymap_reader.get_tract_vertices(tract_id)
 
         assert quads_are_equiv(truth_quad, loaded_quad), f"Tract {tract_id} quads not equivalent"

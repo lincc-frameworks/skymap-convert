@@ -10,7 +10,6 @@ A dependency-light package for skymap operations: use the LSST skymap without th
 
 ## Quick start
 
-
 1. Install the package.
 ```bash
 git clone https://github.com/lincc-frameworks/skymap-convert.git
@@ -22,7 +21,7 @@ pip install .
 ```python
 import skymap_convert
 
-reader = skymap_convert.ConvertedSkymapReader(converted_skymap_path)
+reader = skymap_convert.ConvertedSkymapReader(preset="lsst_skymap")
 ```
 
 3. Optionally, call `summarize` to take a peek at the convents of the converted skymap.
@@ -34,11 +33,12 @@ reader.summarize()
 # Skymap Summary
 # ----------------------------------------
 # Path:               /path/to/skymap-convert/converted_skymaps/lsst_skymap
-# Name:               converted_skymap
+# Name:               lsst_skymap
 # Generated:          2025-07-01T18:11:20.873149Z
 # ...
 ```
-4. Use `get_tract_vertices` and `get_patch_vertices` to access the data.
+4. Use `get_tract_vertices` and `get_patch_vertices` to access the data.  
+*(See [Reading and using a converted skymap.ipynb](https://github.com/lincc-frameworks/skymap-convert/blob/main/docs/notebooks/02%20-%20Reading%20and%20using%20a%20converted%20skymap.ipynb) for more details.)*
 ```python
 reader.get_tract_vertices(42)
 
@@ -71,3 +71,12 @@ reader.plot_patches(
     tract_outer_boundaries=60
 )
 ```
+
+## For more information
+### A general overview on skymaps and how they are structured
+See [Skymaps overview](https://github.com/lincc-frameworks/skymap-convert/blob/main/docs/notebooks/00%20-%20Skymaps%20overview.ipynb).
+
+### Converting your own skymaps
+ See [Converting from LSST skymaps.ipynb](https://github.com/lincc-frameworks/skymap-convert/blob/main/docs/notebooks/01%20-%20Converting%20from%20LSST%20skymaps.ipynb).
+
+

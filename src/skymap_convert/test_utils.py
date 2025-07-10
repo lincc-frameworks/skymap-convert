@@ -96,7 +96,7 @@ def get_patch_poly_from_ids(skymap, tract_id, patch_id):
     return patch_info.inner_sky_polygon
 
 
-def get_quad_from_tract_id(skymap, tract_id, inner=False) -> list[list[float]]:
+def get_quad_from_tract_id(skymap, tract_id, inner=True) -> list[list[float]]:
     """Get the RA/Dec quad vertices for a tract by its ID.
 
     Parameters
@@ -107,7 +107,7 @@ def get_quad_from_tract_id(skymap, tract_id, inner=False) -> list[list[float]]:
         The ID of the tract to retrieve.
     inner : bool, optional
         If True, return the inner quad. If False, return the outer quad.
-        Default is False (outer).
+        Default is True (inner).
 
     Returns
     -------

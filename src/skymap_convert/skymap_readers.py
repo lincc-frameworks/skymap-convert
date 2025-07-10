@@ -105,16 +105,28 @@ class ConvertedSkymapReader(SkymapReader):
     - patches : np.ndarray
     """
 
-    def __init__(self, file_path: str | Path, safe_loading: bool = False):
+    def __init__(self, file_path: str | Path = None, safe_loading: bool = False, preset: str = None):
         """Initialize the reader and load the .npy + metadata files.
 
         Parameters
         ----------
-        file_path : str or Path
-            Path to the directory containing tracts.npy, patches.npy, and metadata.yaml
+        file_path : str or Path, optional
+            Path to the directory containing tracts.npy, patches.npy, and metadata.yaml.
+            If None, must specify a preset.
         safe_loading : bool, optional
             If True, raise an exception on degenerate tract or patch polygons
+        preset : str, optional
+            Name of a built-in skymap preset to load. If specified, file_path is ignored.
+            Available presets can be listed with skymap_convert.presets.list_available_presets().
         """
+        # Handle preset parameter
+        if preset is not None:
+            from .presets import get_preset_path
+
+            file_path = get_preset_path(preset)
+        elif file_path is None:
+            raise ValueError("Either file_path or preset must be specified")
+
         super().__init__(file_path)
         self.safe_loading = safe_loading
 
@@ -318,8 +330,7 @@ class ConvertedSkymapReader(SkymapReader):
         print(f"Name:               {self.metadata.get('name', '[unknown]')}")
         print(f"Generated:          {self.metadata.get('generated', '[unknown]')}")
         print(
-            f"Metadata keys:      "
-            f"{list(self.metadata.keys()) if hasattr(self, 'metadata') else '[unknown]'}"
+            f"Metadata keys:      {list(self.metadata.keys()) if hasattr(self, 'metadata') else '[unknown]'}"
         )
         print(f"Number of tracts:   {self.n_tracts if hasattr(self, 'n_tracts') else '[unknown]'}")
         print(

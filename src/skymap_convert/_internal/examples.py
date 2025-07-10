@@ -1,7 +1,7 @@
 """This module contains example plotting functions for documentation purposes."""
 
-import matplotlib as mpl
 import astropy.units as u
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.coordinates import SkyCoord
