@@ -6,12 +6,8 @@ with the skymap-convert package, eliminating the need to manually construct
 paths to the built-in skymap data.
 """
 
-# import sys
+from importlib.resources import files
 from pathlib import Path
-
-# Get the package root directory
-_PACKAGE_ROOT = Path(__file__).parent.parent.parent
-_CONVERTED_SKYMAPS_DIR = _PACKAGE_ROOT / "converted_skymaps"
 
 
 def get_preset_path(preset_name: str) -> Path:
@@ -34,13 +30,16 @@ def get_preset_path(preset_name: str) -> Path:
     FileNotFoundError
         If the preset directory doesn't exist
     """
-    preset_path = _CONVERTED_SKYMAPS_DIR / preset_name
+    presets = files("skymap_convert.converted_skymaps")
+    preset_path = presets / preset_name
 
-    if not preset_path.exists():
+    try:
+        # Check if we can iterate the directory (this tests existence)
+        list(preset_path.iterdir())
+        return Path(preset_path)
+    except (OSError, FileNotFoundError) as err:
         available = list_available_presets()
-        raise FileNotFoundError(f"Preset '{preset_name}' not found. Available presets: {available}")
-
-    return preset_path
+        raise FileNotFoundError(f"Preset '{preset_name}' not found. Available presets: {available}") from err
 
 
 def list_available_presets() -> list[str]:
@@ -51,15 +50,17 @@ def list_available_presets() -> list[str]:
     list[str]
         List of available preset names
     """
-    if not _CONVERTED_SKYMAPS_DIR.exists():
+    try:
+        presets_dir = files("skymap_convert.converted_skymaps")
+
+        preset_names = []
+        for item in presets_dir.iterdir():
+            if item.is_dir() and not item.name.startswith("."):
+                preset_names.append(item.name)
+
+        return sorted(preset_names)
+    except (FileNotFoundError, ModuleNotFoundError):
         return []
-
-    presets = []
-    for item in _CONVERTED_SKYMAPS_DIR.iterdir():
-        if item.is_dir() and not item.name.startswith("."):
-            presets.append(item.name)
-
-    return sorted(presets)
 
 
 def get_preset_info() -> dict[str, dict[str, str]]:
@@ -73,7 +74,7 @@ def get_preset_info() -> dict[str, dict[str, str]]:
     info = {}
 
     for preset_name in list_available_presets():
-        preset_path = _CONVERTED_SKYMAPS_DIR / preset_name
+        preset_path = get_preset_path(preset_name)
         metadata_path = preset_path / "metadata.yaml"
 
         if metadata_path.exists():
@@ -98,28 +99,3 @@ def get_preset_info() -> dict[str, dict[str, str]]:
             }
 
     return info
-
-
-# class _PresetsModule:
-#     """Helper class to provide attribute access to preset paths."""
-
-#     @property
-#     def lsst_skymap(self) -> Path:
-#         """Path to the built-in LSST skymap preset."""
-#         return get_preset_path("lsst_skymap")
-
-#     def get_preset_path(self, preset_name: str) -> Path:
-#         """Get the path to a built-in skymap preset."""
-#         return get_preset_path(preset_name)
-
-#     def list_available_presets(self) -> list[str]:
-#         """List all available built-in skymap presets."""
-#         return list_available_presets()
-
-#     def get_preset_info(self) -> dict[str, dict[str, str]]:
-#         """Get information about available presets."""
-#         return get_preset_info()
-
-
-# # Replace the module with our custom class instance
-# sys.modules[__name__] = _PresetsModule()

@@ -1,0 +1,5 @@
+format_version: 1
+generated: '2025-07-14T14:29:23.620090Z'
+n_patches_per_tract: 100
+n_tracts: 18938
+name: converted_skymap

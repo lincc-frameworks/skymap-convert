@@ -53,7 +53,6 @@ def test_converted_skymap_equivalent_to_original(lsst_skymap, converted_skymap_r
     """Test that ConvertedSkymapReader matches the original LSST SkyMap."""
     pytest.importorskip("lsst.skymap")
 
-    # Optional: override tqdm to be quiet unless --verbose (TODO)
     tract_ids = range(lsst_skymap._numTracts)
     for tract_id in tqdm(tract_ids, desc="Checking tracts", leave=False):
         # Tract check

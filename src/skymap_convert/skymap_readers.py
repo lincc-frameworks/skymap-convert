@@ -1,5 +1,6 @@
 import gzip
 import shutil
+import tempfile
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -124,13 +125,14 @@ class ConvertedSkymapReader(SkymapReader):
             from .presets import get_preset_path
 
             file_path = get_preset_path(preset)
+
         elif file_path is None:
             raise ValueError("Either file_path or preset must be specified")
 
         super().__init__(file_path)
         self.safe_loading = safe_loading
 
-        # Check if the path is a pickle file (common mistake)
+        # Check if the path is a pickle file (eg, a pre-converted skymap)
         if self.file_path.is_file() and self.file_path.suffix in [".pickle", ".pkl"]:
             raise ValueError(
                 f"ConvertedSkymapReader expects a directory containing converted skymap files, "
@@ -158,24 +160,31 @@ class ConvertedSkymapReader(SkymapReader):
         # TODO could be nice to check if the metadata matches the arrays here.
 
     def _decompress_patches_gz(self) -> Path:
-        """Decompress patches.npy.gz if not already done."""
+        """Decompress patches.npy.gz to a temp file if not already done."""
         patches_gz_path = self.file_path / "patches.npy.gz"
-        patches_path = self.file_path / "patches.npy"
 
         # If already decompressed during this session, just return it.
-        if hasattr(self, "_decompressed_once") and self._decompressed_once:
-            return patches_path
+        if hasattr(self, "_tmp_patches_path") and self._tmp_patches_path:
+            return self._tmp_patches_path
 
-        # Delete if it exists (stale or from last session).
-        if patches_path.exists():
-            patches_path.unlink()
+        # Decompress to temp file
+        with (
+            gzip.open(patches_gz_path, "rb") as f_in,
+            tempfile.NamedTemporaryFile(suffix=".npy", delete=False) as tmp_file,
+        ):
+            shutil.copyfileobj(f_in, tmp_file)
+            self._tmp_patches_path = Path(tmp_file.name)
 
-        # Decompress.
-        with gzip.open(patches_gz_path, "rb") as f_in, open(patches_path, "wb") as f_out:
-            shutil.copyfileobj(f_in, f_out)
+        return self._tmp_patches_path
 
-        self._decompressed_once = True
-        return patches_path
+    def cleanup(self):
+        """Delete the temporary decompressed patches file, if it exists."""
+        if hasattr(self, "_tmp_patches_path") and self._tmp_patches_path:
+            try:
+                self._tmp_patches_path.unlink()
+            except Exception as e:
+                print(f"Warning: Could not delete temp file {self._tmp_patches_path}: {e}")
+            self._tmp_patches_path = None
 
     def _verify_nondegeneracy(self, vertices: list[list[float]]):
         """Verify that the polygon is non-degenerate by checking area.
