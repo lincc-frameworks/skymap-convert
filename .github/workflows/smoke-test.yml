@@ -6,9 +6,9 @@
 name: Unit test smoke test
 
 on:
-
-  # Generally disabling this workflow, as our unit tests require the lsst stack
-  workflow_dispatch:
+  # Runs this workflow automatically
+  schedule:
+    - cron: 45 6 * * *
 
 jobs:
   build:
