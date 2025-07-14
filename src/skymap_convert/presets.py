@@ -6,7 +6,7 @@ with the skymap-convert package, eliminating the need to manually construct
 paths to the built-in skymap data.
 """
 
-import sys
+# import sys
 from pathlib import Path
 
 # Get the package root directory
@@ -62,7 +62,7 @@ def list_available_presets() -> list[str]:
     return sorted(presets)
 
 
-def get_preset_info() -> dict[str, dict[str, str]]:  # TODO rmv I think
+def get_preset_info() -> dict[str, dict[str, str]]:
     """Get information about available presets.
 
     Returns
@@ -100,26 +100,26 @@ def get_preset_info() -> dict[str, dict[str, str]]:  # TODO rmv I think
     return info
 
 
-class _PresetsModule:  # TODO rmv I think
-    """Helper class to provide attribute access to preset paths."""
+# class _PresetsModule:
+#     """Helper class to provide attribute access to preset paths."""
 
-    @property
-    def lsst_skymap(self) -> Path:
-        """Path to the built-in LSST skymap preset."""
-        return get_preset_path("lsst_skymap")
+#     @property
+#     def lsst_skymap(self) -> Path:
+#         """Path to the built-in LSST skymap preset."""
+#         return get_preset_path("lsst_skymap")
 
-    def get_preset_path(self, preset_name: str) -> Path:
-        """Get the path to a built-in skymap preset."""
-        return get_preset_path(preset_name)
+#     def get_preset_path(self, preset_name: str) -> Path:
+#         """Get the path to a built-in skymap preset."""
+#         return get_preset_path(preset_name)
 
-    def list_available_presets(self) -> list[str]:
-        """List all available built-in skymap presets."""
-        return list_available_presets()
+#     def list_available_presets(self) -> list[str]:
+#         """List all available built-in skymap presets."""
+#         return list_available_presets()
 
-    def get_preset_info(self) -> dict[str, dict[str, str]]:
-        """Get information about available presets."""
-        return get_preset_info()
+#     def get_preset_info(self) -> dict[str, dict[str, str]]:
+#         """Get information about available presets."""
+#         return get_preset_info()
 
 
-# Replace the module with our custom class instance
-sys.modules[__name__] = _PresetsModule()
+# # Replace the module with our custom class instance
+# sys.modules[__name__] = _PresetsModule()
