@@ -1,100 +1,15 @@
 import gzip
 import shutil
 import tempfile
-from abc import ABC, abstractmethod
 from pathlib import Path
 
 import numpy as np
 import yaml
 
 from .plotting import plot_patches
-from .tract_data import TractData
 
 
-class SkymapReader(ABC):
-    """Abstract base class for reading skymaps from files."""
-
-    def __init__(self, file_path: str | Path):
-        """Initialize the reader with file path.
-
-        Parameters
-        ----------
-        file_path : str or Path
-            Path to the skymap file to read
-        """
-        self.file_path = Path(file_path)
-        if not self.file_path.exists():
-            raise FileNotFoundError(f"Skymap file not found: {file_path}")
-
-    def help(self):
-        """Display available public methods and their descriptions.
-
-        This method introspects the current reader instance to show all
-        available public methods along with brief descriptions extracted
-        from their docstrings.
-        """
-        import inspect
-
-        class_name = self.__class__.__name__
-        print(f"{class_name} - Available Methods")
-        print("=" * (len(class_name) + 21))
-        print()
-
-        # Get all methods that don't start with underscore (public methods)
-        methods = []
-        for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
-            if not name.startswith("_"):
-                methods.append((name, method))
-
-        # Sort methods alphabetically
-        methods.sort(key=lambda x: x[0])
-
-        for method_name, method in methods:
-            # Get the first line of the docstring as brief description
-            doc = inspect.getdoc(method)
-            if doc:
-                # Take first sentence or first line as brief description
-                brief = doc.split(".")[0] + "." if "." in doc else doc.split("\n")[0]
-                # Limit length to keep it concise
-                if len(brief) > 80:
-                    brief = brief[:77] + "..."
-            else:
-                brief = "No description available"
-
-            print(f"  {method_name:20} - {brief}")
-
-        print()
-        print("For detailed information about any method, use: help(reader.method_name)")
-
-    @abstractmethod
-    def get_tract(self, tract_id: int) -> TractData:
-        """Get tract data for a given tract ID (legacy; may be deprecated).
-
-        Parameters
-        ----------
-        tract_id : int
-            The tract ID to retrieve
-
-        Returns
-        -------
-        TractData
-            The tract data
-        """
-        pass
-
-    # @abstractmethod
-    # def get_all_tracts(self) -> dict:
-    #     """Get all tract data.
-
-    #     Returns
-    #     -------
-    #     dict
-    #         Dictionary mapping tract ID to TractData
-    #     """
-    #     pass
-
-
-class ConvertedSkymapReader(SkymapReader):
+class ConvertedSkymapReader:
     """Reader for Converted Skymaps written as .npy files with metadata.
 
     TODO : make a list of the attributes people might want
@@ -119,16 +34,18 @@ class ConvertedSkymapReader(SkymapReader):
             Name of a built-in skymap preset to load. If specified, file_path is ignored.
             Available presets can be listed with skymap_convert.presets.list_available_presets().
         """
-        # Handle preset parameter
+        # Use preset if provided, otherwise check for file_path
         if preset is not None:
             from .presets import get_preset_path
 
             file_path = get_preset_path(preset)
-
         elif file_path is None:
             raise ValueError("Either file_path or preset must be specified")
 
-        super().__init__(file_path)
+        # Set the file path
+        self.file_path = Path(file_path)
+        if not self.file_path.exists():
+            raise FileNotFoundError(f"Skymap file not found: {file_path}")
         self.safe_loading = safe_loading
 
         # Check if the path is a pickle file (eg, a pre-converted skymap)
@@ -279,47 +196,6 @@ class ConvertedSkymapReader(SkymapReader):
 
         return verts
 
-    def get_tract(self, tract_id: int) -> TractData:
-        """Return tract data for a given ID (slated for deprecation).
-
-        Parameters
-        ----------
-        tract_id : int
-            ID of the tract
-
-        Returns
-        -------
-        TractData
-            TractData object with quad and bounds
-
-        Notes
-        -----
-        This method may be deprecated in future releases in favor of direct `get_tract_vertices`.
-        """
-        quad = self.get_tract_vertices(tract_id)
-
-        ras = [ra for ra, _ in quad]
-        decs = [dec for _, dec in quad]
-        dec_bounds = (min(decs), max(decs))
-
-        ra_min, ra_max = min(ras), max(ras)
-        if ra_max - ra_min > 180:  # RA wraparound
-            sorted_ras = sorted(ras)
-            max_gap = 0
-            gap_start = 0
-            for i in range(len(sorted_ras)):
-                gap = (sorted_ras[(i + 1) % 4] - sorted_ras[i]) % 360
-                if gap > max_gap:
-                    max_gap = gap
-                    gap_start = sorted_ras[(i + 1) % 4]
-            ra_bounds = (gap_start, (gap_start - max_gap) % 360)
-        else:
-            ra_bounds = (ra_min, ra_max)
-
-        return TractData(
-            tract_id=tract_id, ring=-1, dec_bounds=dec_bounds, ra_bounds=ra_bounds, quad=quad, is_pole=None
-        )
-
     def summarize(self, allow_malformed: bool = False):
         """Print a summary of the converted skymap contents.
 
@@ -381,3 +257,43 @@ class ConvertedSkymapReader(SkymapReader):
             Title for the plot (default is None)
         """
         return plot_patches(self, tract_patch_ids, margin, tract_outer_boundaries, plot_title)
+
+    def help(self):
+        """Display available public methods and their descriptions.
+
+        This method introspects the current reader instance to show all
+        available public methods along with brief descriptions extracted
+        from their docstrings.
+        """
+        import inspect
+
+        class_name = self.__class__.__name__
+        print(f"{class_name} - Available Methods")
+        print("=" * (len(class_name) + 21))
+        print()
+
+        # Get all methods that don't start with underscore (public methods)
+        methods = []
+        for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
+            if not name.startswith("_"):
+                methods.append((name, method))
+
+        # Sort methods alphabetically
+        methods.sort(key=lambda x: x[0])
+
+        for method_name, method in methods:
+            # Get the first line of the docstring as brief description
+            doc = inspect.getdoc(method)
+            if doc:
+                # Take first sentence or first line as brief description
+                brief = doc.split(".")[0] + "." if "." in doc else doc.split("\n")[0]
+                # Limit length to keep it concise
+                if len(brief) > 80:
+                    brief = brief[:77] + "..."
+            else:
+                brief = "No description available"
+
+            print(f"  {method_name:20} - {brief}")
+
+        print()
+        print("For detailed information about any method, use: help(reader.method_name)")

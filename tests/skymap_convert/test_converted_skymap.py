@@ -1,5 +1,5 @@
 import pytest
-from skymap_convert.test_utils import (
+from skymap_convert.utils import (
     get_quad_from_patch_id,
     get_quad_from_tract_id,
     quads_are_equiv,
@@ -20,19 +20,20 @@ def test_converted_skymap_structure_and_summary(lsst_skymap, converted_skymap_re
     # Reader loads without error
     assert converted_skymap_reader.n_tracts == len(lsst_skymap)
     assert converted_skymap_reader.n_patches_per_tract == 100
-    assert converted_skymap_reader.metadata["name"] == "test_skymap"
+    assert converted_skymap_reader.metadata["name"] == "lsst_skymap"
 
     # Capture and check summary output
     converted_skymap_reader.summarize()
     output = capsys.readouterr().out
     assert "Skymap Summary" in output
-    assert "test_skymap" in output
+    assert "lsst_skymap" in output
 
 
 @pytest.mark.parametrize("tract_id", TRACT_SAMPLES)
 def test_sample_tracts_and_patches(lsst_skymap, converted_skymap_reader, tract_id, tmp_path):
     """Quick check that a subset of tracts and patches match after conversion."""
     pytest.importorskip("lsst.skymap")
+    pytest.importorskip("lsst.sphgeom")
 
     # Tract comparison
     truth_quad = get_quad_from_tract_id(lsst_skymap, tract_id, inner=True)
@@ -50,7 +51,10 @@ def test_sample_tracts_and_patches(lsst_skymap, converted_skymap_reader, tract_i
 
 @pytest.mark.longrun
 def test_converted_skymap_equivalent_to_original(lsst_skymap, converted_skymap_reader):
-    """Test that ConvertedSkymapReader matches the original LSST SkyMap."""
+    """Test that ConvertedSkymapReader matches the original LSST SkyMap.
+
+    Run this with --longrun to override the default skip behavior.
+    """
     pytest.importorskip("lsst.skymap")
 
     tract_ids = range(lsst_skymap._numTracts)

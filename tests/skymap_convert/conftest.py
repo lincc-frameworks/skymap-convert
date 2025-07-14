@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from skymap_convert import ConvertedSkymapReader, ConvertedSkymapWriter
+from skymap_convert import ConvertedSkymapReader
 from skymap_convert.utils import load_pickle_skymap
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[2]
@@ -27,17 +27,18 @@ def pytest_configure(config):
 @pytest.fixture(scope="session")
 def converted_skymap_reader(tmp_path_factory, lsst_skymap):
     """Fixture that writes the converted skymap once and returns a reader."""
-    tmp_dir = tmp_path_factory.mktemp("converted_skymap")
-    output_path = tmp_dir / "converted"
+    # tmp_dir = tmp_path_factory.mktemp("converted_skymap")
+    # output_path = tmp_dir / "converted"
 
-    print("Writing converted skymap for the testing session...")
+    # print("Writing converted skymap for the testing session...")
 
-    writer = ConvertedSkymapWriter()
-    writer.write(lsst_skymap, output_path, skymap_name="test_skymap")
+    # writer = ConvertedSkymapWriter()
+    # writer.write(lsst_skymap, output_path, skymap_name="test_skymap")
 
-    print(f"Converted skymap written to {output_path}")
+    # print(f"Converted skymap written to {output_path}")
 
-    return ConvertedSkymapReader(output_path)
+    # return ConvertedSkymapReader(output_path)
+    return ConvertedSkymapReader(preset="lsst_skymap")
 
 
 @pytest.fixture(scope="session")
