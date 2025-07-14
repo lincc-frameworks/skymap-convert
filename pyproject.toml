@@ -19,7 +19,7 @@ requires-python = ">=3.10"
 dependencies = [
     # Core dependencies
     "numpy>=1.21",
-    "astropy>=4.0",
+    "astropy>=5.0",
     "matplotlib>=3.4",
 ]
 
