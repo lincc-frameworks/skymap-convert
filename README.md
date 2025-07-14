@@ -72,6 +72,11 @@ reader.plot_patches(
 )
 ```
 
+6. Finally, clean up the reader's temp files:
+```python
+reader.cleanup()
+```
+
 ## For more information
 ### A general overview on skymaps and how they are structured
 See [Skymaps overview](https://github.com/lincc-frameworks/skymap-convert/blob/main/docs/notebooks/00%20-%20Skymaps%20overview.ipynb).
