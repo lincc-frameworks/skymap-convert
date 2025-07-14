@@ -1,1 +1,1 @@
-recursive-include converted_skymaps *
+recursive-include src/skymap_convert/converted_skymaps *
