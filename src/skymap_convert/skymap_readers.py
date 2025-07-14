@@ -114,7 +114,7 @@ class ConvertedSkymapReader(SkymapReader):
             Path to the directory containing tracts.npy, patches.npy, and metadata.yaml.
             If None, must specify a preset.
         safe_loading : bool, optional
-            If True, raise an exception on degenerate tract or patch polygons
+            If True, raise an exception on degenerate tract or patch polygons.
         preset : str, optional
             Name of a built-in skymap preset to load. If specified, file_path is ignored.
             Available presets can be listed with skymap_convert.presets.list_available_presets().
@@ -208,6 +208,18 @@ class ConvertedSkymapReader(SkymapReader):
 
         if area < 1e-6:  # Rough threshold for degeneracy at arcsecond scale
             raise ValueError("Degenerate polygon: near-zero area detected")
+
+    def get_pole_tract_ids(self) -> list[int]:
+        """Return the tract IDs that correspond to the poles.
+
+        Returns
+        -------
+        list of int
+            List of tract IDs for the poles
+        """
+        if not hasattr(self, "metadata") or "n_tracts" not in self.metadata:
+            raise ValueError("Metadata is not loaded or does not contain 'n_tracts'")
+        return [0, self.metadata["n_tracts"] - 1]
 
     def get_tract_vertices(self, tract_id: int) -> list[list[float]]:
         """Return the outer RA/Dec vertices of the specified tract.
