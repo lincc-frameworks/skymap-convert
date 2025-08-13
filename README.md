@@ -12,9 +12,7 @@ A dependency-light package for skymap operations--use the LSST skymap without th
 
 1. Install the package.
 ```bash
-git clone https://github.com/lincc-frameworks/skymap-convert.git
-cd skymap-convert
-pip install .
+pip skymap-convert
 ```
 
 2. Import a skymap reader.
