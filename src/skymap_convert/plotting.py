@@ -2,7 +2,33 @@ import matplotlib.pyplot as plt
 
 
 def _get_edge_verts(reader, tract_id, which_edge="bottom"):
-    """Get the vertices of the specified edge of a tract."""
+    """Get the vertices of the specified edge of a tract.
+
+    Parameters
+    ----------
+    reader : ConvertedSkymapReader
+        Reader instance for accessing skymap data.
+    tract_id : int
+        ID of the tract to extract edge vertices from.
+    which_edge : str, optional
+        Which edge of the tract to extract. Must be one of:
+        'bottom', 'left', 'top', 'right' (default: 'bottom').
+
+    Returns
+    -------
+    list of list of float
+        List of [RA, Dec] vertex coordinates in degrees for the specified edge.
+
+    Raises
+    ------
+    ValueError
+        If which_edge is not one of the valid options.
+
+    Notes
+    -----
+    Edge vertices are extracted from patch boundaries assuming a 10x10 patch grid.
+    Corner patches are included in both adjacent edges.
+    """
     # The bottom edge is defined by the patches: 0, 1, ..., 8, 9
     # We can take just the bottom-right vertex of each, which will be the 1st vertex of each patch.
     # The next edge is the left edge, and if we grab the bottom-left vertex of each patch,
@@ -32,7 +58,34 @@ def _get_edge_verts(reader, tract_id, which_edge="bottom"):
 
 
 def _plot_tract_outer_boundary(reader, ax, tract_id, min_ra, max_ra, min_dec, max_dec):
-    """Plot the outer boundary of a tract."""
+    """Plot the outer boundary of a tract and update coordinate bounds.
+
+    Parameters
+    ----------
+    reader : ConvertedSkymapReader
+        Reader instance for accessing skymap data.
+    ax : matplotlib.axes.Axes
+        Matplotlib axes object to plot on.
+    tract_id : int
+        ID of the tract to plot.
+    min_ra : float
+        Current minimum RA value in degrees.
+    max_ra : float
+        Current maximum RA value in degrees.
+    min_dec : float
+        Current minimum Dec value in degrees.
+    max_dec : float
+        Current maximum Dec value in degrees.
+
+    Returns
+    -------
+    tuple of float
+        Updated (min_ra, max_ra, min_dec, max_dec) bounds in degrees
+
+    Notes
+    -----
+    Plots the tract boundary as a light gray filled polygon with dashed outline.
+    """
     # Get the vertices of the outer boundary of the tract
     tract_outer_verts = []
     bottom_edge = _get_edge_verts(reader, tract_id, which_edge="bottom")
@@ -64,7 +117,26 @@ def _plot_tract_outer_boundary(reader, ax, tract_id, min_ra, max_ra, min_dec, ma
 
 
 def _generate_title(tract_patch_ids, tract_outer_boundaries):
-    """Generate a title for the plot based on the tract and patch IDs."""
+    """Generate a descriptive title for the plot based on tract and patch IDs.
+
+    Parameters
+    ----------
+    tract_patch_ids : list of tuple
+        List of (tract_id, patch_id) tuples for patches being plotted.
+    tract_outer_boundaries : list of int or None
+        List of tract IDs whose outer boundaries are being plotted.
+
+    Returns
+    -------
+    str
+        Generated plot title describing the content being displayed.
+
+    Notes
+    -----
+    Title format varies based on the number of tracts:
+    - Single tract: "Skymap Patch Plot for Tract {id}"
+    - Multiple tracts: "Skymap Patch Plot for Tracts: {id1}, {id2}, ..."
+    """
     if not tract_patch_ids:
         return "No patches to plot"
 
@@ -82,6 +154,34 @@ def _generate_title(tract_patch_ids, tract_outer_boundaries):
 
 
 def _plot_patches(reader, ax, tract_patch_ids, min_ra, max_ra, min_dec, max_dec):
+    """Plot individual patches and update coordinate bounds.
+
+    Parameters
+    ----------
+    reader : ConvertedSkymapReader
+        Reader instance for accessing skymap data.
+    ax : matplotlib.axes.Axes
+        Matplotlib axes object to plot on.
+    tract_patch_ids : list of tuple
+        List of (tract_id, patch_id) tuples specifying patches to plot.
+    min_ra : float
+        Current minimum RA value in degrees.
+    max_ra : float
+        Current maximum RA value in degrees.
+    min_dec : float
+        Current minimum Dec value in degrees.
+    max_dec : float
+        Current maximum Dec value in degrees.
+
+    Returns
+    -------
+    tuple of float
+        Updated (min_ra, max_ra, min_dec, max_dec) bounds in degrees.
+
+    Notes
+    -----
+    Each patch is plotted as a filled polygon with 50% transparency.
+    """
     for tract_id, patch_id in tract_patch_ids:
         verts = reader.get_patch_vertices(tract_id, patch_id)
         if verts is not None:
@@ -93,7 +193,51 @@ def _plot_patches(reader, ax, tract_patch_ids, min_ra, max_ra, min_dec, max_dec)
 
 
 def plot_patches(reader, tract_patch_ids, margin=0.01, tract_outer_boundaries=None, plot_title=None):
-    """Plot multiple patches in a single figure."""
+    """Plot multiple patches in a single figure with optional tract boundaries.
+
+    Creates a matplotlib figure showing specified skymap patches as filled polygons,
+    with optional tract outer boundaries for context.
+
+    Parameters
+    ----------
+    reader : ConvertedSkymapReader
+        Reader instance for accessing skymap data.
+    tract_patch_ids : list of tuple
+        List of (tract_id, patch_id) tuples specifying patches to plot.
+    margin : float, optional
+        Margin as a fraction of the plot range to add around the plotted area
+        (default: 0.01).
+    tract_outer_boundaries : int or list of int, optional
+        Tract ID(s) whose outer boundaries should be plotted for context.
+        If int, plots boundary for single tract. If list, plots boundaries
+        for all specified tracts (default: None).
+    plot_title : str, optional
+        Custom title for the plot. If None, generates automatic title based
+        on plotted content (default: None).
+
+    Returns
+    -------
+    None
+        Displays the plot using matplotlib.pyplot.show().
+
+    Examples
+    --------
+    Plot patches from a single tract:
+    >>> plot_patches(reader, [(0, 45), (0, 46), (0, 55)])
+
+    Plot patches with tract boundary context:
+    >>> plot_patches(reader, [(0, 45), (1, 20)], tract_outer_boundaries=[0, 1])
+
+    Plot with custom title and margin:
+    >>> plot_patches(reader, [(0, 45)], margin=0.05, plot_title="Custom Title")
+
+    Notes
+    -----
+    - Patches are plotted as filled polygons with 50% transparency
+    - Tract boundaries are shown as light gray dashed outlines
+    - Coordinate axes are labeled in degrees (RA/Dec)
+    - Legend shows tract and patch IDs for each plotted element
+    """
     fig, ax = plt.subplots(figsize=(10, 6))
 
     # Initialize min/max values for RA and Dec

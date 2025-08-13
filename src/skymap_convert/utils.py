@@ -16,8 +16,20 @@ def box_to_convex_polygon(box):
 
     Returns
     -------
-    ConvexPolygon
-        The equivalent polygon.
+    lsst.sphgeom.ConvexPolygon
+        The equivalent polygon with four vertices.
+
+    Raises
+    ------
+    ValueError
+        If the box is empty.
+
+    Notes
+    -----
+    The conversion assumes the box does not wrap around the RA=0/360 boundary.
+    This may need adjustment for boxes that span this boundary.
+
+    TODO : Handle RA wrap-around cases more robustly.
     """
     from lsst.sphgeom import ConvexPolygon, LonLat, UnitVector3d
 
@@ -45,17 +57,18 @@ def box_to_convex_polygon(box):
 
 
 def unit_vector3d_to_radec(vec):
-    """Convert a UnitVector3d to RA/Dec degrees.
+    """Convert a UnitVector3d to RA/Dec coordinates in degrees.
 
     Parameters
     ----------
     vec : lsst.sphgeom.UnitVector3d
-        A 3D unit vector.
+        A 3D unit vector representing a point on the sphere.
 
     Returns
     -------
     tuple of float
-        (RA in degrees [0, 360), Dec in degrees)
+        (RA, Dec) coordinates where RA is in range [0, 360) degrees
+        and Dec is in range [-90, 90] degrees.
     """
     from lsst.sphgeom import LonLat
 
@@ -77,33 +90,60 @@ def load_pickle_skymap(path):
     -------
     lsst.skymap.SkyMap
         The loaded SkyMap object.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the pickle file does not exist.
+    pickle.UnpicklingError
+        If the file cannot be unpickled or does not contain a valid SkyMap.
     """
     with open(path, "rb") as f:
         return pickle.load(f)
 
 
 def radians_to_degrees(radians):
-    """Convert radians to degrees."""
+    """Convert radians to degrees.
+
+    Parameters
+    ----------
+    radians : float
+        Angle in radians.
+
+    Returns
+    -------
+    float
+        Angle in degrees.
+    """
     return radians * (180.0 / math.pi)
 
 
 class IterateTractAndRing:
-    """An iterator to traverse through tract ids and ring ids in a skymap.
+    """An iterator to traverse through tract IDs and ring IDs in a skymap.
 
     This iterator yields tuples of (tract_index, ring_index) for each tract in the skymap.
-
-    Note that the first tract is the south pole, and is considered to be in ring -1, but is
-    assumed to be excluded from ``ring_nums``. If ``add_poles`` is True, the iterator will
-    include the south pole (tract 0) and the north pole (last tract) in the iteration.
+    The first tract is the south pole (ring -1), and the last tract is the north pole.
 
     Parameters
     ----------
     ring_nums : list of int
-        A list where each element represents the number of tracts in each ring (eg, [5, 10, 15] will
-        be interpreted as 5 tracts in ring 0, 10 in ring 1, and 15 in ring 2).
+        A list where each element represents the number of tracts in each ring.
+        For example, [5, 10, 15] represents 5 tracts in ring 0, 10 in ring 1,
+        and 15 in ring 2.
     add_poles : bool, optional
-        If True, the iterator will include the south pole (tract 0) and the north pole (last tract).
-        If False, it will only iterate through the rings. Default is True.
+        If True, include the south pole (tract 0) and north pole (last tract)
+        in the iteration. If False, only iterate through the rings (default: True).
+
+    Examples
+    --------
+    >>> iterator = IterateTractAndRing([5, 10, 15], add_poles=True)
+    >>> for tract_id, ring_id in iterator:
+    ...     print(f"Tract {tract_id} is in ring {ring_id}")
+    Tract 0 is in ring -1
+    Tract 1 is in ring 0
+    ...
+
+    TODO : this is more or less deprecated, I belive. Consider removing.
     """
 
     def __init__(self, ring_nums, add_poles=True):
@@ -148,13 +188,17 @@ def get_poly_from_tract_id(skymap, tract_id, inner=False):
     tract_id : int
         The ID of the tract to retrieve.
     inner : bool, optional
-        If True, return the inner polygon. If False, return the outer polygon.
-        Default is False (outer polygon).
+        If True, return the inner polygon. If False, return the outer polygon
+        (default: False).
 
     Returns
     -------
-    ConvexPolygon
+    lsst.sphgeom.ConvexPolygon
         The polygon representing the tract's sky region.
+
+    Notes
+    -----
+    Automatically handles conversion from Box to ConvexPolygon if needed.
     """
     from lsst.sphgeom import Box
 
@@ -169,17 +213,17 @@ def polys_are_equiv(poly_a, poly_b, rtol=1e-12, atol=1e-14):
 
     Parameters
     ----------
-    poly_a, poly_b : sphgeom.ConvexPolygon
+    poly_a, poly_b : lsst.sphgeom.ConvexPolygon
         The polygons to compare.
-    rtol : float
-        Relative tolerance for np.allclose.
-    atol : float
-        Absolute tolerance for np.allclose.
+    rtol : float, optional
+        Relative tolerance for numpy.allclose (default: 1e-12).
+    atol : float, optional
+        Absolute tolerance for numpy.allclose (default: 1e-14).
 
     Returns
     -------
     bool
-        True if all vertices match within tolerance.
+        True if all vertices match within tolerance, False otherwise.
     """
     verts_a = poly_a.getVertices()
     verts_b = poly_b.getVertices()
@@ -199,17 +243,22 @@ def quads_are_equiv(
 
     Parameters
     ----------
-    quad1 : list of [RA, Dec]
-        First set of four polygon vertices in degrees.
-    quad2 : list of [RA, Dec]
-        Second set of four polygon vertices in degrees.
+    quad1 : list of list of float
+        First set of four polygon vertices as [[RA, Dec], ...] in degrees.
+    quad2 : list of list of float
+        Second set of four polygon vertices as [[RA, Dec], ...] in degrees.
     tol_arcsec : float, optional
-        Allowed tolerance in arcseconds for all matching points.
+        Allowed tolerance in arcseconds for all matching points (default: 1.0).
 
     Returns
     -------
     bool
         True if all corresponding vertices are within the specified tolerance.
+
+    Raises
+    ------
+    ValueError
+        If either quad does not contain exactly 4 vertices.
     """
     if len(quad1) != 4 or len(quad2) != 4:
         raise ValueError("Each quad must contain exactly 4 vertices.")
@@ -225,7 +274,22 @@ def quads_are_equiv(
 
 
 def get_patch_poly_from_ids(skymap, tract_id, patch_id):
-    """Get ConvexPolygon for a given patch."""
+    """Get ConvexPolygon for a given patch.
+
+    Parameters
+    ----------
+    skymap : lsst.skymap.SkyMap
+        The LSST SkyMap object.
+    tract_id : int
+        The ID of the tract containing the patch.
+    patch_id : int
+        The ID of the patch within the tract.
+
+    Returns
+    -------
+    lsst.sphgeom.ConvexPolygon
+        The polygon representing the patch's inner sky region.
+    """
     patch_info = skymap.generateTract(tract_id).getPatchInfo(patch_id)
     return patch_info.inner_sky_polygon
 
@@ -240,13 +304,17 @@ def get_quad_from_tract_id(skymap, tract_id, inner=True) -> list[list[float]]:
     tract_id : int
         The ID of the tract to retrieve.
     inner : bool, optional
-        If True, return the inner quad. If False, return the outer quad.
-        Default is True (inner).
+        If True, return the inner quad. If False, return the outer quad
+        (default: True).
 
     Returns
     -------
-    list of [RA, Dec]
-        The list of four polygon vertices.
+    list of list of float
+        List of four polygon vertices as [[RA, Dec], ...] in degrees.
+
+    Notes
+    -----
+    Automatically handles conversion from Box to ConvexPolygon if needed.
     """
     from lsst.sphgeom import Box
 
@@ -270,8 +338,8 @@ def get_quad_from_patch_id(skymap, tract_id: int, patch_id: int) -> list[list[fl
 
     Returns
     -------
-    list of [RA, Dec]
-        The list of four polygon vertices for the patch.
+    list of list of float
+        List of four polygon vertices as [[RA, Dec], ...] in degrees.
     """
     tract = skymap.generateTract(tract_id)
     patch_info = tract.getPatchInfo(patch_id)

@@ -6,8 +6,11 @@ with the skymap-convert package, eliminating the need to manually construct
 paths to the built-in skymap data.
 """
 
+import logging
 from importlib.resources import files
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def get_preset_path(preset_name: str) -> Path:
@@ -16,7 +19,7 @@ def get_preset_path(preset_name: str) -> Path:
     Parameters
     ----------
     preset_name : str
-        Name of the preset skymap
+        Name of the preset skymap to retrieve.
 
     Returns
     -------
@@ -25,10 +28,14 @@ def get_preset_path(preset_name: str) -> Path:
 
     Raises
     ------
-    ValueError
-        If the preset name is not recognized
     FileNotFoundError
-        If the preset directory doesn't exist
+        If the preset directory doesn't exist or preset name is not recognized.
+
+    Examples
+    --------
+    >>> path = get_preset_path("lsst_skymap")
+    >>> print(path)
+    /path/to/skymap_convert/converted_skymaps/lsst_skymap
     """
     presets = files("skymap_convert.converted_skymaps")
     preset_path = presets / preset_name
@@ -47,8 +54,18 @@ def list_available_presets() -> list[str]:
 
     Returns
     -------
-    list[str]
-        List of available preset names
+    list of str
+        Sorted list of available preset names.
+
+    Notes
+    -----
+    Returns an empty list if no presets are found.
+
+    Examples
+    --------
+    >>> presets = list_available_presets()
+    >>> print(presets)
+    ['lsst_skymap', 'my_custom_skymap', ...]
     """
     try:
         presets_dir = files("skymap_convert.converted_skymaps")
@@ -59,17 +76,40 @@ def list_available_presets() -> list[str]:
                 preset_names.append(item.name)
 
         return sorted(preset_names)
-    except (FileNotFoundError, ModuleNotFoundError):
+    except ModuleNotFoundError as e:
+        # If the module is not found, return an empty list
+        # This can happen if the package is not installed or resources are missing
+        logger.warning("Module not found: %s. No presets available.", e)
+        return []
+    except FileNotFoundError as e:
+        logger.warning("File not found: %s. No presets available.", e)
         return []
 
 
 def get_preset_info() -> dict[str, dict[str, str]]:
-    """Get information about available presets.
+    """Get detailed information about available presets.
+
+    Reads metadata from each preset's metadata.yaml file to provide
+    comprehensive information about available skymaps.
 
     Returns
     -------
-    dict[str, dict[str, str]]
-        Dictionary mapping preset names to their metadata
+    dict of str to dict of str to str
+        Dictionary mapping preset names to their metadata information.
+        Each preset entry contains:
+        - 'path': Full path to the preset directory
+        - 'name': Descriptive name from metadata
+        - 'generated': ISO timestamp of when skymap was generated
+        - 'n_tracts': Number of tracts in the skymap
+        - 'n_patches_per_tract': Number of patches per tract
+
+    Examples
+    --------
+    >>> info = get_preset_info()
+    >>> print(info['lsst_skymap']['n_tracts'])
+    '1823'
+    >>> print(info['lsst_skymap']['generated'])
+    '2024-08-13T10:30:00Z'
     """
     info = {}
 
