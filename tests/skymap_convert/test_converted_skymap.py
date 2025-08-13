@@ -11,7 +11,24 @@ PATCH_SAMPLES = [0, 42, 99]
 
 
 def test_converted_skymap_structure_and_summary(lsst_skymap, converted_skymap_reader, capsys):
-    """Test that ConvertedSkymapWriter produces readable output with correct structure."""
+    """Test that ConvertedSkymapReader produces readable output with correct structure.
+
+    Parameters
+    ----------
+    lsst_skymap : lsst.skymap.SkyMap
+        The original LSST skymap object for comparison.
+    converted_skymap_reader : ConvertedSkymapReader
+        Reader instance for the converted skymap.
+    capsys : pytest.CaptureFixture
+        Pytest fixture for capturing stdout/stderr.
+
+    Notes
+    -----
+    Verifies that:
+    - All expected files (metadata.yaml, tracts.npy, patches.npy) exist
+    - Reader loads metadata correctly
+    - Summary output contains expected content
+    """
     # Ensure expected files exist
     assert (converted_skymap_reader.metadata_path).exists()
     assert (converted_skymap_reader.tracts_path).exists()
@@ -31,7 +48,29 @@ def test_converted_skymap_structure_and_summary(lsst_skymap, converted_skymap_re
 
 @pytest.mark.parametrize("tract_id", TRACT_SAMPLES)
 def test_sample_tracts_and_patches(lsst_skymap, converted_skymap_reader, tract_id, tmp_path):
-    """Quick check that a subset of tracts and patches match after conversion."""
+    """Verify that sample tracts and patches match between original and converted skymaps.
+
+    Parameters
+    ----------
+    lsst_skymap : lsst.skymap.SkyMap
+        The original LSST skymap object for comparison.
+    converted_skymap_reader : ConvertedSkymapReader
+        Reader instance for the converted skymap.
+    tract_id : int
+        The tract ID to test (parametrized from TRACT_SAMPLES).
+    tmp_path : Path
+        Pytest fixture providing temporary directory path.
+
+    Notes
+    -----
+    Tests a representative subset of tracts and patches for performance.
+    For each sample tract, compares:
+    - Tract boundary vertices
+    - Sample patch vertices (patches 0, 42, 99)
+
+    Requires lsst.skymap and lsst.sphgeom packages for reading and processing the original skymap.
+    If these packages are not available, the test will be skipped.
+    """
     pytest.importorskip("lsst.skymap")
     pytest.importorskip("lsst.sphgeom")
 
@@ -51,9 +90,28 @@ def test_sample_tracts_and_patches(lsst_skymap, converted_skymap_reader, tract_i
 
 @pytest.mark.longrun
 def test_converted_skymap_equivalent_to_original(lsst_skymap, converted_skymap_reader):
-    """Test that ConvertedSkymapReader matches the original LSST SkyMap.
+    """Comprehensive test that ConvertedSkymapReader exactly matches the original LSST SkyMap.
 
-    Run this with --longrun to override the default skip behavior.
+    Parameters
+    ----------
+    lsst_skymap : lsst.skymap.SkyMap
+        The original LSST skymap object for comparison
+    converted_skymap_reader : ConvertedSkymapReader
+        Reader instance for the converted skymap
+
+    Notes
+    -----
+    This is a comprehensive test that compares every tract and patch between
+    the original and converted skymaps. It is marked as @pytest.mark.longrun
+    because it can take several minutes to complete.
+
+    Run with: pytest --longrun to include this test.
+
+    For each tract in the skymap:
+    - Compares tract boundary vertices
+    - Compares all 100 patch vertices within the tract
+
+    Requires lsst.skymap and lsst.sphgeom packages.
     """
     pytest.importorskip("lsst.skymap")
 
