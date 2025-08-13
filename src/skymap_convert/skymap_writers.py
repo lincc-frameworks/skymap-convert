@@ -18,7 +18,7 @@ class ConvertedSkymapWriter:
 
     Notes
     -----
-    This class requires the `lsst.skymap` and `lsst.sphgeom` packages from the LSST stack.
+    This class requires the `lsst.sphgeom` package.
 
     Examples
     --------
