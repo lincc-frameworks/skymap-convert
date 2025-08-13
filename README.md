@@ -77,6 +77,19 @@ reader.plot_patches(
 reader.cleanup()
 ```
 
+## A note on dependencies
+In its simplest form, Skymap Convert requires no LSST-stack dependences.
+
+This means that users may **read and use the built-in LSST skymap** (or any other pre-converted skymaps) with **just the core version of this package** (which can be obtained via `pip install skymap-convert`, or cloning the repo and running `pip install .`).
+
+Users who wish to convert their *own* skymap from the lsst.skymap [RingsSkyMap](https://github.com/lsst/skymap/blob/main/python/lsst/skymap/ringsSkyMap.py) type will need to install additional dependencies. These may be installed by:
+```bash
+git clone https://github.com/lincc-frameworks/skymap-convert.git
+cd skymap-convert
+pip install '.[dev]'
+```
+
+
 ## For more information
 ### A general overview on skymaps and how they are structured
 See [Skymaps overview](https://github.com/lincc-frameworks/skymap-convert/blob/main/docs/notebooks/00%20-%20Skymaps%20overview.ipynb).

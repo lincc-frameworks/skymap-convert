@@ -10,19 +10,49 @@ from .utils import box_to_convex_polygon, unit_vector3d_to_radec
 
 
 class ConvertedSkymapWriter:
-    """Writer for Converted Skymaps using .npy + metadata.yaml."""
+    """Writer for Converted Skymaps using .npy + metadata.yaml format.
+
+    This class converts LSST SkyMap objects into a format optimized for fast loading
+    and analysis. It extracts tract and patch polygon vertices and saves them as
+    NumPy arrays with accompanying YAML metadata.
+
+    Notes
+    -----
+    This class requires the `lsst.skymap` and `lsst.sphgeom` packages from the LSST stack.
+
+    Examples
+    --------
+    >>> writer = ConvertedSkymapWriter()
+    >>> writer.write(skymap, "output_dir", "my_skymap")
+    """
 
     def write(self, skymap, output_path: str | Path, skymap_name: str = "converted_skymap"):
         """Write tract and patch vertices to .npy files with metadata.
 
+        Extracts polygon vertices from an LSST SkyMap and saves them in an optimized
+        format consisting of:
+        - tracts.npy: Uncompressed array of tract boundary vertices
+        - patches.npy.gz: Compressed array of patch boundary vertices
+        - metadata.yaml: Skymap information and array dimensions
+
         Parameters
         ----------
         skymap : lsst.skymap.SkyMap
-            The LSST SkyMap object to write
+            The LSST SkyMap object to convert and write.
         output_path : str or Path
-            Directory path to write output files into
+            Directory path where output files will be written.
         skymap_name : str, optional
-            Name of the skymap (for metadata purposes)
+            Descriptive name for the skymap (stored in metadata), by default "converted_skymap".
+
+        Notes
+        -----
+        The method assumes 100 patches per tract, which is standard for LSST skymaps.
+        All polygon vertices are stored as [RA, Dec] coordinates in degrees.
+
+        Examples
+        --------
+        >>> writer = ConvertedSkymapWriter()
+        >>> writer.write(my_skymap, "/path/to/output", "DC2_skymap")
         """
         from lsst.sphgeom import Box
 
@@ -82,12 +112,17 @@ class ConvertedSkymapWriter:
         print(f"Wrote Converted Skymap to: {output_path}")
 
     def _ensure_output_directory(self, output_path: Path):
-        """Ensure the output directory exists.
+        """Ensure the output directory exists, creating it if necessary.
 
         Parameters
         ----------
         output_path : Path
-            The output file path or directory where the output file will be written.
+            The directory path where output files will be written.
+
+        Notes
+        -----
+        Creates parent directories as needed. If output_path points to an existing
+        file, uses the file's parent directory instead.
         """
         if isinstance(output_path, str):
             output_path = Path(output_path)

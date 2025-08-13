@@ -12,12 +12,26 @@ from .plotting import plot_patches
 class ConvertedSkymapReader:
     """Reader for Converted Skymaps written as .npy files with metadata.
 
-    TODO : make a list of the attributes people might want
-    - n_tracts : int
-    - n_patches_per_tract : int
-    - metadata : dict
-    - tracts : np.ndarray
-    - patches : np.ndarray
+    This class provides an interface to read and interact with skymap data that has been
+    converted to NumPy format with YAML metadata. It supports loading from file paths
+    or built-in presets, and provides methods to access tract and patch polygon vertices.
+
+    Attributes
+    ----------
+    n_tracts : int
+        Number of tracts in the skymap.
+    n_patches_per_tract : int
+        Number of patches per tract.
+    metadata : dict
+        Metadata dictionary loaded from the YAML file.
+    tracts : np.ndarray
+        Memory-mapped array of tract polygon vertices.
+    patches : np.ndarray
+        Memory-mapped array of patch polygon vertices.
+    file_path : Path
+        Path to the skymap directory.
+    safe_loading : bool
+        Whether to verify polygon non-degeneracy when loading vertices.
     """
 
     def __init__(self, file_path: str | Path = None, safe_loading: bool = False, preset: str = None):
@@ -76,7 +90,13 @@ class ConvertedSkymapReader:
         # TODO could be nice to check if the metadata matches the arrays here.
 
     def _decompress_patches_gz(self) -> Path:
-        """Decompress patches.npy.gz to a temp file if not already done."""
+        """Decompress patches.npy.gz to a temporary file if not already done.
+
+        Returns
+        -------
+        Path
+            Path to the decompressed temporary file.
+        """
         patches_gz_path = self.file_path / "patches.npy.gz"
 
         # If already decompressed during this session, just return it.
@@ -94,7 +114,11 @@ class ConvertedSkymapReader:
         return self._tmp_patches_path
 
     def cleanup(self):
-        """Delete the temporary decompressed patches file, if it exists."""
+        """Delete the temporary decompressed patches file, if it exists.
+
+        This method should be called when the reader is no longer needed
+        to clean up temporary files created during decompression.
+        """
         if hasattr(self, "_tmp_patches_path") and self._tmp_patches_path:
             try:
                 self._tmp_patches_path.unlink()
@@ -103,17 +127,18 @@ class ConvertedSkymapReader:
             self._tmp_patches_path = None
 
     def _verify_nondegeneracy(self, vertices: list[list[float]]):
-        """Verify that the polygon is non-degenerate by checking area.
+        """Verify that a polygon is non-degenerate by checking its area.
 
         Parameters
         ----------
-        vertices : list of [RA, Dec]
-            The 4 polygon vertices (in degrees)
+        vertices : list of list of float
+            The polygon vertices as [[RA, Dec], ...] in degrees.
+            Must contain at least 3 vertices.
 
         Raises
         ------
         ValueError
-            If polygon appears degenerate (zero-area)
+            If polygon has fewer than 3 vertices or appears degenerate (near-zero area).
         """
         if len(vertices) < 3:
             raise ValueError("Polygon has fewer than 3 vertices")
@@ -135,29 +160,44 @@ class ConvertedSkymapReader:
             raise ValueError("Degenerate polygon: near-zero area detected")
 
     def get_pole_tract_ids(self) -> list[int]:
-        """Return the tract IDs that correspond to the poles.
+        """Return the tract IDs that correspond to the celestial poles.
+
+        In typical skymap configurations, the first and last tracts
+        correspond to the north and south celestial poles respectively.
 
         Returns
         -------
         list of int
-            List of tract IDs for the poles
+            List containing [north_pole_tract_id, south_pole_tract_id].
+
+        Raises
+        ------
+        ValueError
+            If metadata is not loaded or does not contain 'n_tracts'.
         """
         if not hasattr(self, "metadata") or "n_tracts" not in self.metadata:
             raise ValueError("Metadata is not loaded or does not contain 'n_tracts'")
         return [0, self.metadata["n_tracts"] - 1]
 
     def get_tract_vertices(self, tract_id: int) -> list[list[float]]:
-        """Return the outer RA/Dec vertices of the specified tract.
+        """Return the RA/Dec vertices of the specified tract's outer boundary.
 
         Parameters
         ----------
         tract_id : int
-            ID of the tract to retrieve
+            ID of the tract to retrieve (0 <= tract_id < n_tracts).
 
         Returns
         -------
-        list of [RA, Dec]
-            List of four polygon vertices
+        list of list of float
+            List of four polygon vertices as [[RA, Dec], ...] in degrees.
+
+        Raises
+        ------
+        IndexError
+            If tract_id is out of bounds.
+        ValueError
+            If safe_loading is True and polygon is degenerate.
         """
         if not (0 <= tract_id < self.n_tracts):
             raise IndexError(f"Tract ID {tract_id} is out of bounds")
@@ -175,14 +215,21 @@ class ConvertedSkymapReader:
         Parameters
         ----------
         tract_id : int
-            ID of the tract containing the patch
+            ID of the tract containing the patch (0 <= tract_id < n_tracts).
         patch_id : int
-            ID of the patch within the tract
+            ID of the patch within the tract (0 <= patch_id < n_patches_per_tract).
 
         Returns
         -------
-        list of [RA, Dec]
-            List of four polygon vertices
+        list of list of float
+            List of four polygon vertices as [[RA, Dec], ...] in degrees.
+
+        Raises
+        ------
+        IndexError
+            If tract_id or patch_id is out of bounds.
+        ValueError
+            If safe_loading is True and polygon is degenerate.
         """
         if not (0 <= tract_id < self.n_tracts):
             raise IndexError(f"Tract ID {tract_id} is out of bounds")
@@ -247,14 +294,19 @@ class ConvertedSkymapReader:
 
         Parameters
         ----------
-        tract_patch_ids : list of tuples
-            List of (tract_id, patch_id) tuples to plot
+        tract_patch_ids : list of tuple
+            List of (tract_id, patch_id) tuples specifying which patches to plot.
         margin : float, optional
-            Margin (in percent) around the plotted area (default is 0.01)
-        tract_outer_boundaries : int, list of int, optional
-            If provided, plots the outer boundaries of specified tracts.
+            Margin around the plotted area, in percentage of the total area (default: 0.01).
+        tract_outer_boundaries : int or list of int, optional
+            If provided, also plot the outer boundaries of specified tract(s).
         plot_title : str, optional
-            Title for the plot (default is None)
+            Title for the plot.
+
+        Returns
+        -------
+        matplotlib figure
+            The generated plot figure.
         """
         return plot_patches(self, tract_patch_ids, margin, tract_outer_boundaries, plot_title)
 
