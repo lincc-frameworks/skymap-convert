@@ -31,7 +31,8 @@ class ConvertedSkymapReader:
     file_path : Path
         Path to the skymap directory.
     safe_loading : bool
-        Whether to verify polygon non-degeneracy when loading vertices.
+        Whether to verify polygon non-degeneracy when loading vertices. Additionally, if true,
+        checks that the metadata matches the array shapes.
     """
 
     def __init__(self, file_path: str | Path = None, safe_loading: bool = False, preset: str = None):
@@ -47,6 +48,15 @@ class ConvertedSkymapReader:
         preset : str, optional
             Name of a built-in skymap preset to load. If specified, file_path is ignored.
             Available presets can be listed with skymap_convert.presets.list_available_presets().
+
+        Raises
+        ------
+        ValueError
+            If neither file_path nor preset is provided, or if the specified preset does not exist.
+        FileNotFoundError
+            If the specified file_path does not exist or is not a directory.
+        AssertionError
+            If safe_loading is True and the metadata does not match the array shapes.
         """
         # Use preset if provided, otherwise check for file_path
         if preset is not None:
@@ -87,7 +97,12 @@ class ConvertedSkymapReader:
         self.tracts = np.load(self.tracts_path, mmap_mode="r")
         self.patches = np.load(self.patches_path, mmap_mode="r")
 
-        # TODO could be nice to check if the metadata matches the arrays here.
+        # Check if the metadata matches the arrays
+        if self.safe_loading:
+            assert self.n_tracts == self.tracts.shape[0], "Metadata n_tracts does not match array shape"
+            assert (
+                self.n_patches_per_tract == self.patches.shape[1]
+            ), "Metadata n_patches_per_tract does not match array shape"
 
     def _decompress_patches_gz(self) -> Path:
         """Decompress patches.npy.gz to a temporary file if not already done.

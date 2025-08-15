@@ -59,8 +59,8 @@ class ConvertedSkymapWriter:
         output_path = Path(output_path)
         self._ensure_output_directory(output_path)
 
-        n_tracts = len(skymap)  # TODO - is this accounting for poles?
-        n_patches = 100  # fixed per tract # TODO - would be nice to make this dynamic, though we expect 100
+        n_tracts = skymap._numTracts  # sum(skymap._ringNums) + 2  #  Adding 2 to account for poles.
+        n_patches = skymap._tractBuilder._numPatches  #  Number of patches per tract, typically 100.
         tract_array = np.zeros((n_tracts, 4, 2), dtype=np.float64)
         patch_array = np.zeros((n_tracts, n_patches, 4, 2), dtype=np.float64)
 
