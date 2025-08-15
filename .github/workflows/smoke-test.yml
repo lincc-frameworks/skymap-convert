@@ -9,6 +9,7 @@ on:
   # Runs this workflow automatically
   schedule:
     - cron: 45 6 * * *
+  workflow_dispatch:
 
 jobs:
   build:
