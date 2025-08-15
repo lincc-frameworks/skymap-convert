@@ -118,66 +118,6 @@ def radians_to_degrees(radians):
     return radians * (180.0 / math.pi)
 
 
-class IterateTractAndRing:
-    """An iterator to traverse through tract IDs and ring IDs in a skymap.
-
-    This iterator yields tuples of (tract_index, ring_index) for each tract in the skymap.
-    The first tract is the south pole (ring -1), and the last tract is the north pole.
-
-    Parameters
-    ----------
-    ring_nums : list of int
-        A list where each element represents the number of tracts in each ring.
-        For example, [5, 10, 15] represents 5 tracts in ring 0, 10 in ring 1,
-        and 15 in ring 2.
-    add_poles : bool, optional
-        If True, include the south pole (tract 0) and north pole (last tract)
-        in the iteration. If False, only iterate through the rings (default: True).
-
-    Examples
-    --------
-    >>> iterator = IterateTractAndRing([5, 10, 15], add_poles=True)
-    >>> for tract_id, ring_id in iterator:
-    ...     print(f"Tract {tract_id} is in ring {ring_id}")
-    Tract 0 is in ring -1
-    Tract 1 is in ring 0
-    ...
-
-    TODO : this is more or less deprecated, I belive. Consider removing.
-    """
-
-    def __init__(self, ring_nums, add_poles=True):
-        self.ring_nums = ring_nums
-        if add_poles:
-            self.total_tracts = sum(ring_nums) + 2
-            self.current_tract = 0
-            self.current_ring = -1
-        else:
-            self.total_tracts = sum(ring_nums)
-            self.current_tract = 1
-            self.current_ring = 0
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        # End iteration if we have processed all tracts.
-        if self.current_tract >= self.total_tracts:
-            raise StopIteration
-        tract_and_ring = (self.current_tract, self.current_ring)
-
-        # Increase tract.
-        self.current_tract += 1
-
-        # Check if we need to move to the next ring.clear
-        if self.current_ring == -1:
-            self.current_ring += 1
-        elif self.current_tract > sum(self.ring_nums[: self.current_ring + 1]):
-            self.current_ring += 1
-
-        return tract_and_ring
-
-
 def get_poly_from_tract_id(skymap, tract_id, inner=False):
     """Get the ConvexPolygon for a tract by its ID.
 

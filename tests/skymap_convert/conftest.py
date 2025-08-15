@@ -52,9 +52,15 @@ def converted_skymap_reader():
     Note
     ----
     This uses the pre-converted LSST skymap for performance reasons.
+    The reader will be automatically cleaned up at the end of the test session.
     """
+    reader = ConvertedSkymapReader(preset="lsst_skymap")
 
-    return ConvertedSkymapReader(preset="lsst_skymap")
+    # Yield the reader for use in tests
+    yield reader
+
+    # Cleanup after all tests are done
+    reader.cleanup()
 
 
 @pytest.fixture(scope="session")
@@ -74,3 +80,59 @@ def lsst_skymap():
     """
     pytest.importorskip("lsst.skymap")
     return load_pickle_skymap(RAW_SKYMAP_DIR / "skyMap_lsst_cells_v1_skymaps.pickle")
+
+
+@pytest.fixture(scope="session")
+def written_skymap_data(lsst_skymap, tmp_path_factory, request):
+    """Session-scoped fixture that writes skymap data once and provides paths for testing.
+
+    Parameters
+    ----------
+    lsst_skymap : lsst.skymap.SkyMap
+        The original LSST skymap object to write.
+    tmp_path_factory : pytest.TempPathFactory
+        Pytest factory for creating temporary directories.
+    request : pytest.FixtureRequest
+        Pytest request object to access command line options.
+
+    Returns
+    -------
+    dict
+        Dictionary containing:
+        - 'output_dir': Path to the directory containing written skymap files
+        - 'skymap_name': Name used for the skymap
+        - 'reader': ConvertedSkymapReader instance for the written data
+
+    Notes
+    -----
+    This fixture only runs if --longrun is specified, otherwise it skips.
+    The expensive skymap writing operation happens only once per test session.
+    The reader will be automatically cleaned up at the end of the test session.
+    """
+    # Skip if not running longrun tests
+    if not request.config.option.longrun:
+        pytest.skip("Skipping written_skymap_data fixture - requires --longrun")
+
+    pytest.importorskip("lsst.skymap")
+    pytest.importorskip("lsst.sphgeom")
+
+    from skymap_convert.skymap_writers import ConvertedSkymapWriter
+
+    # Create session-scoped temporary directory
+    output_dir = tmp_path_factory.mktemp("session_skymap_data")
+    skymap_name = "test_session_skymap"
+
+    # Write the skymap once
+    writer = ConvertedSkymapWriter()
+    writer.write(lsst_skymap, output_dir, skymap_name)
+
+    # Create reader for the written data
+    reader = ConvertedSkymapReader(output_dir)
+
+    data = {"output_dir": output_dir, "skymap_name": skymap_name, "reader": reader}
+
+    # Yield the data for use in tests
+    yield data
+
+    # Cleanup after all tests are done
+    reader.cleanup()
