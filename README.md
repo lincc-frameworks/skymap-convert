@@ -4,6 +4,7 @@
 -->
 [![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lincc-frameworks/skymap-convert/smoke-test.yml)](https://github.com/lincc-frameworks/skymap-convert/actions/workflows/smoke-test.yml)
+[![PyPI](https://img.shields.io/pypi/v/skymap_convert?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/skymap_convert/)
 
 # Skymap Convert
 A dependency-light package for skymap operations--use the LSST skymap without the LSST stack.
