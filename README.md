@@ -8,6 +8,8 @@
 # Skymap Convert
 A dependency-light package for skymap operations--use the LSST skymap without the LSST stack.
 
+Made for use within [lsdb-rubin](https://github.com/astronomy-commons/lsdb-rubin); can also be used on its own.
+
 ## Quick start
 
 1. Install the package.
