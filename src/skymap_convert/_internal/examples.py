@@ -225,3 +225,71 @@ def plot_patches_in_tract(reader, tract_id, data=None):
     ax.legend()
     plt.tight_layout()
     plt.show()
+
+
+def plot_single_patch_in_tract(reader, tract_id, patch_id, data=None):
+    """Plot a single patch in a tract with data points colored by patch membership."""
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Get all patch vertices for the tract
+    all_patch_verts = []
+    target_patch_verts = None
+
+    for pid in range(100):
+        patch_verts = reader.get_patch_vertices(tract_id, pid)
+        if patch_verts is None:
+            continue
+        all_patch_verts.append(patch_verts)
+        if pid == patch_id:
+            target_patch_verts = patch_verts
+
+    if target_patch_verts is None:
+        raise ValueError(f"Patch {patch_id} not found in tract {tract_id}.")
+
+    # Plot all patches in light gray
+    _plot_patches(ax, all_patch_verts, single_color="lightgray", alpha=0.3)
+
+    # Highlight the target patch
+    _plot_patches(ax, [target_patch_verts], single_color=colors[0], alpha=0.8)
+
+    # Plot tract boundary
+    tract_verts = reader.get_tract_vertices(tract_id)
+    _plot_tract(ax, tract_id, tract_verts, color=colors[7])
+
+    # Plot data points colored by patch membership
+    if data is not None:
+        for i in range(len(data)):
+            row = data.iloc[i]
+            ra, dec = row["ra"], row["dec"]
+
+            # Check if point is in the target patch
+            point_patch = row.get("patch", None)
+            if point_patch == patch_id:
+                # Point is in target patch
+                color = colors[2]  # Green for points in target patch
+                markersize = 8
+                alpha = 0.9
+                label = f"Points in Patch {patch_id}" if i == 0 else None
+            else:
+                # Point is outside target patch
+                color = colors[3]  # Red for points outside target patch
+                markersize = 5
+                alpha = 0.6
+                label = "Points outside patch" if i == 0 else None
+
+            ax.plot(ra, dec, marker=".", color=color, markersize=markersize, alpha=alpha, label=label)
+
+    # Set zoom level based on the target patch
+    min_ra, max_ra, min_dec, max_dec = _get_ra_dec_range([target_patch_verts])
+    ax.set_xlim(min_ra - 1, max_ra + 1)
+    ax.set_ylim(min_dec - 0.25, max_dec + 0.25)
+
+    # Add legend, labels, and title
+    ax.legend(loc="upper right", fontsize="small")
+    ax.set_xlabel("RA (deg)")
+    ax.set_ylabel("Dec (deg)")
+    ax.set_title(f"Patch {patch_id} in Tract {tract_id} - Data Point Classification")
+    ax.grid(True)
+
+    plt.tight_layout()
+    plt.show()
