@@ -30,12 +30,6 @@ def get_preset_path(preset_name: str) -> Path:
     ------
     FileNotFoundError
         If the preset directory doesn't exist or preset name is not recognized.
-
-    Examples
-    --------
-    >>> path = get_preset_path("lsst_skymap")
-    >>> print(path)
-    /path/to/skymap_convert/converted_skymaps/lsst_skymap
     """
     presets = files("skymap_convert.converted_skymaps")
     preset_path = presets / preset_name
@@ -60,12 +54,6 @@ def list_available_presets() -> list[str]:
     Notes
     -----
     Returns an empty list if no presets are found.
-
-    Examples
-    --------
-    >>> presets = list_available_presets()
-    >>> print(presets)
-    ['lsst_skymap', 'my_custom_skymap', ...]
     """
     try:
         presets_dir = files("skymap_convert.converted_skymaps")
@@ -102,14 +90,6 @@ def get_preset_info() -> dict[str, dict[str, str]]:
         - 'generated': ISO timestamp of when skymap was generated
         - 'n_tracts': Number of tracts in the skymap
         - 'n_patches_per_tract': Number of patches per tract
-
-    Examples
-    --------
-    >>> info = get_preset_info()
-    >>> print(info['lsst_skymap']['n_tracts'])
-    '1823'
-    >>> print(info['lsst_skymap']['generated'])
-    '2024-08-13T10:30:00Z'
     """
     info = {}
 

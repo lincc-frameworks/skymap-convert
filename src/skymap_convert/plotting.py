@@ -220,17 +220,6 @@ def plot_patches(reader, tract_patch_ids, margin=0.01, tract_outer_boundaries=No
     None
         Displays the plot using matplotlib.pyplot.show().
 
-    Examples
-    --------
-    Plot patches from a single tract:
-    >>> plot_patches(reader, [(0, 45), (0, 46), (0, 55)])
-
-    Plot patches with tract boundary context:
-    >>> plot_patches(reader, [(0, 45), (1, 20)], tract_outer_boundaries=[0, 1])
-
-    Plot with custom title and margin:
-    >>> plot_patches(reader, [(0, 45)], margin=0.05, plot_title="Custom Title")
-
     Notes
     -----
     - Patches are plotted as filled polygons with 50% transparency

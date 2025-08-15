@@ -19,11 +19,6 @@ class ConvertedSkymapWriter:
     Notes
     -----
     This class requires the `lsst.sphgeom` package.
-
-    Examples
-    --------
-    >>> writer = ConvertedSkymapWriter()
-    >>> writer.write(skymap, "output_dir", "my_skymap")
     """
 
     def write(self, skymap, output_path: str | Path, skymap_name: str = "converted_skymap"):
@@ -49,11 +44,6 @@ class ConvertedSkymapWriter:
         - The method assumes all tracts have the same number of patches, which is standard for LSST
           skymaps.
         - All polygon vertices are stored as [RA, Dec] coordinates in degrees.
-
-        Examples
-        --------
-        >>> writer = ConvertedSkymapWriter()
-        >>> writer.write(my_skymap, "/path/to/output", "DC2_skymap")
         """
         from lsst.sphgeom import Box
 
