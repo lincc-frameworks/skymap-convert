@@ -46,8 +46,9 @@ class ConvertedSkymapWriter:
 
         Notes
         -----
-        The method assumes 100 patches per tract, which is standard for LSST skymaps.
-        All polygon vertices are stored as [RA, Dec] coordinates in degrees.
+        - The method assumes all tracts have the same number of patches, which is standard for LSST
+          skymaps.
+        - All polygon vertices are stored as [RA, Dec] coordinates in degrees.
 
         Examples
         --------
@@ -59,8 +60,24 @@ class ConvertedSkymapWriter:
         output_path = Path(output_path)
         self._ensure_output_directory(output_path)
 
-        n_tracts = skymap._numTracts  # sum(skymap._ringNums) + 2  #  Adding 2 to account for poles.
-        n_patches = skymap._tractBuilder._numPatches  #  Number of patches per tract, typically 100.
+        n_tracts = skymap._numTracts
+
+        # Get number of patches from the first tract
+        first_tract = skymap[0]
+        n_patches_0 = (
+            first_tract._tractBuilder._numPatches.x * first_tract._tractBuilder._numPatches.y
+        )  #  Number of patches per tract, typically 100.
+        # Get the number of patches from the second tract
+        second_tract = skymap[1]
+        n_patches_1 = second_tract._tractBuilder._numPatches.x * second_tract._tractBuilder._numPatches.y
+        # Check that they are the same
+        if n_patches_0 != n_patches_1:
+            raise ValueError(
+                f"Number of patches per tract mismatch: {n_patches_0} != {n_patches_1}. "
+                "Ensure all tracts have the same number of patches."
+            )
+        n_patches = n_patches_0  # Use the first tract's patch count
+
         tract_array = np.zeros((n_tracts, 4, 2), dtype=np.float64)
         patch_array = np.zeros((n_tracts, n_patches, 4, 2), dtype=np.float64)
 
