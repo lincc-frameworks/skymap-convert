@@ -14,7 +14,7 @@ Made for use within [lsdb-rubin](https://github.com/astronomy-commons/lsdb-rubin
 
 1. Install the package.
 ```bash
-pip skymap-convert
+pip install skymap-convert
 ```
 
 2. Import a skymap reader.
