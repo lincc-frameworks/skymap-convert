@@ -1,10 +1,11 @@
 import pytest
+from tqdm import tqdm
+
 from skymap_convert.utils import (
     get_quad_from_patch_id,
     get_quad_from_tract_id,
     quads_are_equiv,
 )
-from tqdm import tqdm
 
 TRACT_SAMPLES = [1, 250, 1899]
 PATCH_SAMPLES = [0, 42, 99]
@@ -128,6 +129,6 @@ def test_converted_skymap_equivalent_to_original(lsst_skymap, converted_skymap_r
             truth_patch_quad = get_quad_from_patch_id(lsst_skymap, tract_id, patch_id)
             loaded_patch_quad = converted_skymap_reader.get_patch_vertices(tract_id, patch_id)
 
-            assert quads_are_equiv(
-                truth_patch_quad, loaded_patch_quad
-            ), f"Patch {patch_id} in tract {tract_id} not equivalent"
+            assert quads_are_equiv(truth_patch_quad, loaded_patch_quad), (
+                f"Patch {patch_id} in tract {tract_id} not equivalent"
+            )

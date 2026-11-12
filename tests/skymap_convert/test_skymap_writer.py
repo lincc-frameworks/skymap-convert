@@ -1,11 +1,12 @@
 import pytest
 import yaml
+from tqdm import tqdm
+
 from skymap_convert.utils import (
     get_quad_from_patch_id,
     get_quad_from_tract_id,
     quads_are_equiv,
 )
-from tqdm import tqdm
 
 TRACT_SAMPLES = [1, 250, 1899]
 PATCH_SAMPLES = [0, 42, 99]
@@ -98,9 +99,9 @@ def test_writer_sample_tracts(lsst_skymap, written_skymap_data):
             original_patch = get_quad_from_patch_id(lsst_skymap, tract_id, patch_id)
             round_trip_patch = reader.get_patch_vertices(tract_id, patch_id)
 
-            assert quads_are_equiv(
-                original_patch, round_trip_patch
-            ), f"Round-trip failed for patch {patch_id} in tract {tract_id}"
+            assert quads_are_equiv(original_patch, round_trip_patch), (
+                f"Round-trip failed for patch {patch_id} in tract {tract_id}"
+            )
 
 
 @pytest.mark.longrun
@@ -144,6 +145,6 @@ def test_writer_full_skymap_integrity(lsst_skymap, written_skymap_data):
                 truth_patch = get_quad_from_patch_id(lsst_skymap, tract_id, patch_id)
                 written_patch = reader.get_patch_vertices(tract_id, patch_id)
 
-                assert quads_are_equiv(
-                    truth_patch, written_patch
-                ), f"Patch {patch_id} in tract {tract_id} geometry not preserved"
+                assert quads_are_equiv(truth_patch, written_patch), (
+                    f"Patch {patch_id} in tract {tract_id} geometry not preserved"
+                )
