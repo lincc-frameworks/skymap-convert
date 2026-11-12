@@ -1,21 +1,22 @@
 
 [project]
 name = "skymap_convert"
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = ["LICENSE"]
 readme = "README.md"
 authors = [
     { name = "Olivia Lynn", email = "olynn@andrew.cmu.edu" }
 ]
+description = "Utilities to use the LSST skymap without the LSST stack."
 classifiers = [
     "Development Status :: 4 - Beta",
-    "License :: OSI Approved :: MIT License",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
 ]
 dynamic = ["version"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     # Core dependencies
     "numpy>=1.21",
@@ -65,13 +66,13 @@ addopts = "--doctest-modules --doctest-glob=*.rst"
 markers = [
     "longrun: marks tests as long running (add --longrun to run)"
 ]
+log_cli_level = "INFO"
 
 [tool.isort]
 profile = "black"
 line_length = 110
 [tool.ruff]
 line-length = 110
-target-version = "py310"
 [tool.ruff.lint]
 select = [
     # pycodestyle
@@ -102,7 +103,7 @@ select = [
     "D419",
     # Numpy v2.0 compatibility
     "NPY201",
-]
+    ]
 ignore = [
     "UP006", # Allow non standard library generics in type hints
     "UP007", # Allow Union in type hints
