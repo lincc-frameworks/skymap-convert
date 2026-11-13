@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+
 from skymap_convert import ConvertedSkymapReader
 from skymap_convert.utils import load_pickle_skymap
 

@@ -6,6 +6,8 @@
 Welcome to skymap_convert's documentation!
 ========================================================================================
 
+Utilities to use the LSST skymap without the LSST stack.
+
 Dev Guide - Getting Started
 ---------------------------
 
@@ -16,7 +18,7 @@ create and activate a new environment.
 
 .. code-block:: console
 
-   >> conda create env -n <env_name> python=3.11
+   >> conda create env -n <env_name> python=3.12
    >> conda activate <env_name>
 
 

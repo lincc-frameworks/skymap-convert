@@ -5,6 +5,7 @@ Test script to verify that the presets functionality works correctly.
 from pathlib import Path
 
 import pytest
+
 import skymap_convert.presets as presets
 from skymap_convert import ConvertedSkymapReader
 

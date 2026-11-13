@@ -100,9 +100,9 @@ class ConvertedSkymapReader:
         # Check if the metadata matches the arrays
         if self.safe_loading:
             assert self.n_tracts == self.tracts.shape[0], "Metadata n_tracts does not match array shape"
-            assert (
-                self.n_patches_per_tract == self.patches.shape[1]
-            ), "Metadata n_patches_per_tract does not match array shape"
+            assert self.n_patches_per_tract == self.patches.shape[1], (
+                "Metadata n_patches_per_tract does not match array shape"
+            )
 
     def _decompress_patches_gz(self) -> Path:
         """Decompress patches.npy.gz to a temporary file if not already done.
